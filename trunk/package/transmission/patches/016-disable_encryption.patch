@@ -1,0 +1,11 @@
+--- transmission-1.91/libtransmission/session.c.orig	2011-02-07 17:00:23.000000000 +0300
++++ transmission-1.91/libtransmission/session.c	2011-02-11 22:02:43.000000000 +0300
+@@ -229,7 +229,7 @@
+ #ifdef TR_EMBEDDED
+  #define TR_DEFAULT_ENCRYPTION   TR_CLEAR_PREFERRED
+ #else
+- #define TR_DEFAULT_ENCRYPTION   TR_ENCRYPTION_PREFERRED
++ #define TR_DEFAULT_ENCRYPTION   TR_CLEAR_PREFERRED
+ #endif
+ 
+ void

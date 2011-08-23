@@ -1,0 +1,68 @@
+table, div { font-size: 14px; }
+body, div {
+	padding: 0px;
+	margin: 0px 0px 0px 0px;
+	font-family: arial, verdana, tahoma, helvetica, sans-serif;
+}
+body {
+	background: #C5C9CF url('/i/config_bg.gif') repeat-x;
+	-webkit-text-size-adjust: none;
+}
+div.back {
+	width: 100%;
+	text-align: center;
+}
+div.outer {
+	margin: 48px 8px 8px 8px;
+	display: inline-block;
+	width: 400px;
+	border: 1px solid;
+	border-color: #555;
+}
+div.header {
+	background: #e7e7e7 url('/i/leaf_page_bg.gif') repeat-x;
+	padding: 8px 8px 20px 8px;
+	border: 1px solid;
+	border-color: #800 #e7e7e7 #FFF #e7e7e7;
+}
+#logo_line {
+	display: block;
+	background: #0C2F83 url('/i/logo.gif') no-repeat -24px -1px;
+	text-align: left;
+	height: 24px;
+	vertical-align: bottom;
+	font-size: 24px;
+	color: #eef;
+	font-weight: bold;
+	font-family: Arial, Tahoma, sans-serif;
+	text-align: right;
+	font-style: italic;
+	padding: 12px 18px 13px 105px;
+	margin: 0;
+	white-space: nowrap;
+}
+
+#logo_underline {
+	background: #B00;
+	height: 4px;
+	margin: 0px;
+	font-size: 0pt;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+input[type=button] {
+	background: #e7e7e7 url('/i/button_bg.gif') repeat-x;
+	color: #333;
+	border: 1px solid;
+	border-color: #aba5a1;
+	font-size: 14px;
+}
+input[type=button]:focus {
+	border: dotted 1px #aba5a1;
+}
+input[type=button]:hover {
+	color: #384e83;
+}

@@ -1,0 +1,25 @@
+div.fade {
+	filter: alpha(opacity=60);
+}
+
+select {
+	border-style: solid;
+	border-width: 1px;
+	border-color: #777 #ccc #ccc #777;
+}
+
+div.outside_border {
+	display: inline-block;
+
+	border-style: solid;
+	border-width: 1px;
+	border-color: #777 #ccc #ccc #777;
+}
+
+label {
+	line-height: 1.8em;
+}
+
+.hide_file {
+	filter: alpha(opacity=0);
+}

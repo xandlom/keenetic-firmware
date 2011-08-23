@@ -1,0 +1,168 @@
+diff -ruN vsftpd-2.2.0.orig/parseconf.c vsftpd-2.2.0/parseconf.c
+--- vsftpd-2.2.0.orig/parseconf.c	2009-09-06 00:47:07.000000000 +0400
++++ vsftpd-2.2.0/parseconf.c	2009-09-08 20:08:14.000000000 +0400
+@@ -37,6 +37,7 @@
+   { "anon_mkdir_write_enable", &tunable_anon_mkdir_write_enable },
+   { "anon_other_write_enable", &tunable_anon_other_write_enable },
+   { "anon_allow_writable_root", &tunable_anon_allow_writable_root },
++  { "protect_writable_root", &tunable_protect_writable_root },
+   { "chown_uploads", &tunable_chown_uploads },
+   { "connect_from_port_20", &tunable_connect_from_port_20 },
+   { "xferlog_enable", &tunable_xferlog_enable },
+diff -ruN vsftpd-2.2.0.orig/postlogin.c vsftpd-2.2.0/postlogin.c
+--- vsftpd-2.2.0.orig/postlogin.c	2009-08-08 05:49:15.000000000 +0400
++++ vsftpd-2.2.0/postlogin.c	2009-09-08 20:32:21.000000000 +0400
+@@ -78,6 +78,7 @@
+                                 const struct mystr* p_base);
+ static int data_transfer_checks_ok(struct vsf_session* p_sess);
+ static void resolve_tilde(struct mystr* p_str, struct vsf_session* p_sess);
++static int protect_writable_root(void);
+ 
+ void
+ process_post_login(struct vsf_session* p_sess)
+@@ -965,6 +966,19 @@
+   handle_upload_common(p_sess, 0, 0);
+ }
+ 
++static int 
++protect_writable_root(void)
++{
++  static struct mystr cwd_str;
++
++  str_getcwd(&cwd_str);
++  
++  if(!vsf_sysutil_strcmp("/", str_getbuf(&cwd_str)))
++    return 1;
++
++  return 0;
++}
++
+ static void
+ handle_upload_common(struct vsf_session* p_sess, int is_append, int is_unique)
+ {
+@@ -993,6 +1007,11 @@
+   vsf_log_start_entry(p_sess, kVSFLogEntryUpload);
+   str_copy(&p_sess->log_str, &p_sess->ftp_arg_str);
+   prepend_path_to_filename(&p_sess->log_str);
++  if (tunable_protect_writable_root && protect_writable_root())
++  {
++    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
++    return;
++  }
+   if (!vsf_access_check_file(p_filename))
+   {
+     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
+@@ -1129,6 +1148,11 @@
+   vsf_log_start_entry(p_sess, kVSFLogEntryMkdir);
+   str_copy(&p_sess->log_str, &p_sess->ftp_arg_str);
+   prepend_path_to_filename(&p_sess->log_str);
++  if (tunable_protect_writable_root && protect_writable_root())
++  {
++    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
++    return;
++  }
+   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
+   {
+     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
+@@ -1166,6 +1190,11 @@
+   vsf_log_start_entry(p_sess, kVSFLogEntryRmdir);
+   str_copy(&p_sess->log_str, &p_sess->ftp_arg_str);
+   prepend_path_to_filename(&p_sess->log_str);
++  if (tunable_protect_writable_root && protect_writable_root())
++  {
++    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
++    return;
++  }
+   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
+   {
+     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
+@@ -1193,6 +1222,11 @@
+   vsf_log_start_entry(p_sess, kVSFLogEntryDelete);
+   str_copy(&p_sess->log_str, &p_sess->ftp_arg_str);
+   prepend_path_to_filename(&p_sess->log_str);
++  if (tunable_protect_writable_root && protect_writable_root())
++  {
++    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
++    return;
++  }
+   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
+   {
+     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
+@@ -1234,6 +1268,11 @@
+   /* Clear old value */
+   str_free(&p_sess->rnfr_filename_str);
+   resolve_tilde(&p_sess->ftp_arg_str, p_sess);
++  if (tunable_protect_writable_root && protect_writable_root())
++  {
++    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
++    return;
++  }
+   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
+   {
+     vsf_log_start_entry(p_sess, kVSFLogEntryRename);
+@@ -1279,6 +1318,11 @@
+   str_copy(&s_tmp_str, &p_sess->ftp_arg_str);
+   prepend_path_to_filename(&s_tmp_str);
+   str_append_str(&p_sess->log_str, &s_tmp_str);
++  if (tunable_protect_writable_root && protect_writable_root())
++  {
++    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
++    return;
++  }
+   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
+   {
+     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
+@@ -1494,6 +1538,11 @@
+   prepend_path_to_filename(&p_sess->log_str);
+   str_append_char(&p_sess->log_str, ' ');
+   str_append_str(&p_sess->log_str, p_arg_str);
++  if (tunable_protect_writable_root && protect_writable_root())
++  {
++    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
++    return;
++  }
+   if (!vsf_access_check_file(&s_chmod_file_str))
+   {
+     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
+@@ -1567,6 +1616,11 @@
+     str_copy(&p_sess->ftp_arg_str, &s_filename_str);
+   }
+   resolve_tilde(&p_sess->ftp_arg_str, p_sess);
++  if (tunable_protect_writable_root && protect_writable_root())
++  {
++    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
++    return;
++  }
+   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
+   {
+     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
+diff -ruN vsftpd-2.2.0.orig/tunables.c vsftpd-2.2.0/tunables.c
+--- vsftpd-2.2.0.orig/tunables.c	2009-09-06 00:47:07.000000000 +0400
++++ vsftpd-2.2.0/tunables.c	2009-09-08 20:05:01.000000000 +0400
+@@ -18,6 +18,7 @@
+ int tunable_anon_mkdir_write_enable;
+ int tunable_anon_other_write_enable;
+ int tunable_anon_allow_writable_root;
++int tunable_protect_writable_root;
+ int tunable_chown_uploads;
+ int tunable_connect_from_port_20;
+ int tunable_xferlog_enable;
+@@ -157,6 +158,7 @@
+   tunable_anon_mkdir_write_enable = 0;
+   tunable_anon_other_write_enable = 0;
+   tunable_anon_allow_writable_root = 0;
++  tunable_protect_writable_root = 0;
+   tunable_chown_uploads = 0;
+   tunable_connect_from_port_20 = 0;
+   tunable_xferlog_enable = 0;
+diff -ruN vsftpd-2.2.0.orig/tunables.h vsftpd-2.2.0/tunables.h
+--- vsftpd-2.2.0.orig/tunables.h	2009-09-06 00:47:07.000000000 +0400
++++ vsftpd-2.2.0/tunables.h	2009-09-08 20:06:18.000000000 +0400
+@@ -19,6 +19,7 @@
+ extern int tunable_anon_mkdir_write_enable;   /* MKD for anon */
+ extern int tunable_anon_other_write_enable;   /* APPE DELE RMD RNFR for anon */
+ extern int tunable_anon_allow_writable_root;  /* Allow writable / for anon */
++extern int tunable_protect_writable_root;     /* Protect writable / */
+ extern int tunable_chown_uploads;             /* chown() anon uploaded files */
+ extern int tunable_connect_from_port_20;      /* PORT connects from port 20 */
+ extern int tunable_xferlog_enable;            /* Log transfers to a file */

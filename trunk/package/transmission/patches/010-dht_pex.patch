@@ -1,0 +1,85 @@
+diff -ruN transmission-1.91.orig/web/index.html transmission-1.91/web/index.html
+--- transmission-1.91.orig/web/index.html	2010-02-24 19:04:36.000000000 +0300
++++ transmission-1.91/web/index.html	2010-02-25 10:10:08.000000000 +0300
+@@ -220,17 +220,27 @@
+ 						</ul>
+ 						<div id="prefs_tab_general" class="prefs_tab">
+ 							<div class="preference download_location">
+-								<label class="category">Расположение закаченных файлов:</label>
++								<label class="category">Параметры:</label>
++								<!--
+ 								<div class="formdiv">
+ 									<label for="download_location" class="item">Закачивать в папку:</label>
+ 									<input type="text" name="download_location" id="download_location"/>
+ 								</div>
++								-->
+ 								<div class="formdiv checkbox auto_start">
+ 									<input type="checkbox" name="auto_start" id="auto_start"/>
+ 									<label for="auto_start" class="item">Запускать закачку автоматически</label>
+ 								</div>
++								<div class="formdiv checkbox dht_enable">
++									<input type="checkbox" name="dht_enable" id="dht_enable"/>
++									<label for="dht_enable" class="item">Включить DHT</label>
++								</div>
++								<div class="formdiv checkbox pex_enable">
++									<input type="checkbox" name="pex_enable" id="pex_enable"/>
++									<label for="pex_enable" class="item">Включить PEX</label>
++								</div>
+ 							</div>
+-							
++							<!--
+ 							<div class="preference port">
+ 								<label class="category">Соединение:</label>
+ 								<div class="formdiv">
+@@ -238,6 +248,7 @@
+ 									<input type="text" id="port" name="port"/>
+ 								</div>
+ 							</div>
++							-->
+ 							<div class="preference encryption">
+ 								<label class="category">Шифрование:</label>
+ 								<div class="formdiv checkbox">
+diff -ruN transmission-1.91.orig/web/javascript/transmission.js transmission-1.91/web/javascript/transmission.js
+--- transmission-1.91.orig/web/javascript/transmission.js	2010-02-24 19:04:36.000000000 +0300
++++ transmission-1.91/web/javascript/transmission.js	2010-02-25 10:53:35.000000000 +0300
+@@ -628,10 +628,12 @@
+ 		
+ 		// pass the new prefs upstream to the RPC server
+ 		var o = { };
+-		o[RPC._PeerPort]             = parseInt( $('#prefs_form #port')[0].value );
++		o[RPC._DHTState]             = $('#prefs_form #dht_enable')[0].checked;
++		o[RPC._PEXState]             = $('#prefs_form #pex_enable')[0].checked;
++		// o[RPC._PeerPort]             = parseInt( $('#prefs_form #port')[0].value );
+ 		o[RPC._UpSpeedLimit]         = parseInt( $('#prefs_form #upload_rate')[0].value );
+ 		o[RPC._DownSpeedLimit]       = parseInt( $('#prefs_form #download_rate')[0].value );
+-		o[RPC._DownloadDir]          = $('#prefs_form #download_location')[0].value;
++		// o[RPC._DownloadDir]          = $('#prefs_form #download_location')[0].value;
+ 		o[RPC._UpSpeedLimited]       = $('#prefs_form #limit_upload')[0].checked;
+ 		o[RPC._DownSpeedLimited]     = $('#prefs_form #limit_download')[0].checked;
+ 		o[RPC._Encryption]           = $('#prefs_form #encryption')[0].checked
+@@ -881,9 +883,11 @@
+ 		var up_limit      = prefs[RPC._UpSpeedLimit];
+ 		var up_limited    = prefs[RPC._UpSpeedLimited];
+ 
+-		$('div.download_location input')[0].value = prefs[RPC._DownloadDir];
+-		$('div.port input')[0].value              = prefs[RPC._PeerPort];
++		//$('div.download_location input')[0].value = prefs[RPC._DownloadDir];
++		//$('div.port input')[0].value              = prefs[RPC._PeerPort];
+ 		$('div.auto_start input')[0].checked      = prefs[Prefs._AutoStart];
++		$('div.dht_enable input')[0].checked      = prefs[RPC._DHTState];
++		$('div.pex_enable input')[0].checked      = prefs[RPC._PEXState];
+ 		$('input#limit_download')[0].checked      = down_limited;
+ 		$('input#download_rate')[0].value         = down_limit;
+ 		$('input#limit_upload')[0].checked        = up_limited;
+diff -ruN transmission-1.91.orig/web/javascript/transmission.remote.js transmission-1.91/web/javascript/transmission.remote.js
+--- transmission-1.91.orig/web/javascript/transmission.remote.js	2010-02-24 19:04:36.000000000 +0300
++++ transmission-1.91/web/javascript/transmission.remote.js	2010-02-25 09:45:53.000000000 +0300
+@@ -22,6 +22,8 @@
+ RPC._UpSpeedLimited         = 'speed-limit-up-enabled';
+ RPC._DownSpeedLimited       = 'speed-limit-down-enabled';
+ RPC._TurtleState            = 'alt-speed-enabled';
++RPC._DHTState               = 'dht-enabled';
++RPC._PEXState               = 'pex-enabled';
+ RPC._TurtleUpSpeedLimit     = 'alt-speed-up';
+ RPC._TurtleDownSpeedLimit   = 'alt-speed-down';
+ RPC._TurtleTimeEnabled      = 'alt-speed-time-enabled';

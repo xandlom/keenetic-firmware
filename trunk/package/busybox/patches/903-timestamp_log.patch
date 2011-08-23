@@ -1,0 +1,26 @@
+diff -ruN busybox-1.8.2.orig/sysklogd/syslogd.c busybox-1.8.2/sysklogd/syslogd.c
+--- busybox-1.8.2.orig/sysklogd/syslogd.c	2007-11-10 04:54:22.000000000 +0300
++++ busybox-1.8.2/sysklogd/syslogd.c	2009-10-19 11:48:51.000000000 +0400
+@@ -386,17 +386,18 @@
+ static void timestamp_and_log(int pri, char *msg, int len)
+ {
+ 	char *timestamp;
++	time_t now;
+ 
+ 	if (len < 16 || msg[3] != ' ' || msg[6] != ' '
+ 	 || msg[9] != ':' || msg[12] != ':' || msg[15] != ' '
+ 	) {
+-		time_t now;
+-		time(&now);
+-		timestamp = ctime(&now) + 4;
++		msg += 0;
+ 	} else {
+-		timestamp = msg;
+ 		msg += 16;
+ 	}
++
++	time(&now);
++	timestamp = ctime(&now) + 4;
+ 	timestamp[15] = '\0';
+ 
+ 	/* Log message locally (to file or shared mem) */

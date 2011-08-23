@@ -1,0 +1,78 @@
+diff -ruN busybox-1.8.2.orig/networking/udhcp/common.h busybox-1.8.2/networking/udhcp/common.h
+--- busybox-1.8.2.orig/networking/udhcp/common.h	2008-10-16 20:09:27.000000000 +0400
++++ busybox-1.8.2/networking/udhcp/common.h	2008-10-16 09:45:18.000000000 +0400
+@@ -21,7 +21,7 @@
+ #include <netinet/udp.h>
+ #include <netinet/ip.h>
+ 
+-#define MAX_OPTIONS_LEN  308
++#define MAX_OPTIONS_LEN  1232 /* 308 + 924 */
+ 
+ struct dhcpMessage {
+ 	uint8_t op;
+@@ -39,7 +39,7 @@
+ 	uint8_t sname[64];
+ 	uint8_t file[128];
+ 	uint32_t cookie;
+-	uint8_t options[MAX_OPTIONS_LEN]; /* 312 - cookie */
++	uint8_t options[MAX_OPTIONS_LEN];
+ };
+ 
+ struct udp_dhcp_packet {
+diff -ruN busybox-1.8.2.orig/networking/udhcp/options.c busybox-1.8.2/networking/udhcp/options.c
+--- busybox-1.8.2.orig/networking/udhcp/options.c	2008-10-16 20:09:28.000000000 +0400
++++ busybox-1.8.2/networking/udhcp/options.c	2008-10-16 20:18:03.000000000 +0400
+@@ -90,7 +90,8 @@
+ 
+ 	optionptr = packet->options;
+ 	i = 0;
+-	length = 308;
++	length = MAX_OPTIONS_LEN;
++	
+ 	while (!done) {
+ 		if (i >= length) {
+ 			bb_error_msg("bogus packet, option fields too long");
+@@ -112,7 +113,7 @@
+ 				bb_error_msg("bogus packet, option fields too long");
+ 				return NULL;
+ 			}
+-			over = optionptr[i + 3];
++			over = optionptr[i + 2];
+ 			i += optionptr[OPT_LEN] + 2;
+ 			break;
+ 		case DHCP_END:
+@@ -156,7 +157,7 @@
+ 	int end = end_option(optionptr);
+ 
+ 	/* end position + string length + option code/length + end option */
+-	if (end + string[OPT_LEN] + 2 + 1 >= 308) {
++	if (end + string[OPT_LEN] + 2 + 1 >= MAX_OPTIONS_LEN) {
+ 		bb_error_msg("option 0x%02x did not fit into the packet",
+ 				string[OPT_CODE]);
+ 		return 0;
+diff -ruN busybox-1.8.2.orig/networking/udhcp/packet.c busybox-1.8.2/networking/udhcp/packet.c
+--- busybox-1.8.2.orig/networking/udhcp/packet.c	2008-10-16 20:09:27.000000000 +0400
++++ busybox-1.8.2/networking/udhcp/packet.c	2008-10-13 19:06:03.000000000 +0400
+@@ -127,7 +127,9 @@
+ }
+ 
+ /* Construct a ip/udp header for a packet, and specify the source and dest hardware address */
++#if 0
+ void BUG_sizeof_struct_udp_dhcp_packet_must_be_576(void);
++#endif
+ int udhcp_raw_packet(struct dhcpMessage *payload,
+ 		uint32_t source_ip, int source_port,
+ 		uint32_t dest_ip, int dest_port, const uint8_t *dest_arp, int ifindex)
+@@ -175,10 +177,10 @@
+ 	packet.ip.version = IPVERSION;
+ 	packet.ip.ttl = IPDEFTTL;
+ 	packet.ip.check = udhcp_checksum(&(packet.ip), sizeof(packet.ip));
+-
++#if 0
+ 	if (sizeof(struct udp_dhcp_packet) != 576)
+ 		BUG_sizeof_struct_udp_dhcp_packet_must_be_576();
+-
++#endif
+ 	result = sendto(fd, &packet, p_len, 0,
+ 			(struct sockaddr *) &dest, sizeof(dest));
+ 	if (result <= 0) {

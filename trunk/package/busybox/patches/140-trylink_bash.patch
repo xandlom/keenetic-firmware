@@ -1,0 +1,10 @@
+Index: busybox-1.7.2/scripts/trylink
+===================================================================
+--- busybox-1.7.2.orig/scripts/trylink	2007-10-30 15:35:00.000000000 -0500
++++ busybox-1.7.2/scripts/trylink	2007-10-30 15:35:00.000000000 -0500
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/usr/bin/env bash
+ 
+ debug=false
+ 

@@ -1,0 +1,217 @@
+#!/bin/sh
+# Copyright (C) 2010 ZyXEL.RU, McMCC
+
+read_flash() {
+	eval `flash get ADMIN_PASSWORD TRNT_FOLDER TRNT_ENABLED TRNT_PORT TRNT_RPC_PORT \
+TRNT_USER_NAME TRNT_USER_PASSWORD TRNT_EXTERNAL_ACCESS_ENABLED TRNT_USE_WEB_ACCOUNT_ENABLED \
+TRNT_AUTO_START_ENABLED LAN_DEFAULT_GATEWAY WAN_DNS1 WAN_DNS2 WAN_DNS3 OP_MODE`
+}
+read_flash
+
+STAT=0
+PREV_STAT=0
+FWUPDATE=0
+BT_PATH=/media/$TRNT_FOLDER
+DIR=$BT_PATH/downloads
+SWAP=$BT_PATH/.swapfile
+DISK=`echo /$TRNT_FOLDER | cut -f2 -d/`
+ZYNTP_LOG=/var/tmp/zyntp.log
+INFO=/var/tmp/transmission_status
+OLD_CFG=/var/tmp/transmission_old.cfg
+
+status() {
+	ps | grep -v grep | grep transmissiond 1> /dev/null && STAT=1 || STAT=0
+}
+
+rpc_access() {
+	if [ "$TRNT_USE_WEB_ACCOUNT_ENABLED" = 'Disabled' ]; then
+		AUSER="$TRNT_USER_NAME"
+		echo "AUSER=\"$TRNT_USER_NAME\"" >> $OLD_CFG
+		APASSWD="$TRNT_USER_PASSWORD"
+		echo "APASSWD=\"$TRNT_USER_PASSWORD\"">> $OLD_CFG
+	else
+		AUSER=admin
+		echo "AUSER=admin" >> $OLD_CFG
+		APASSWD="$ADMIN_PASSWORD"
+		echo "APASSWD=\"$ADMIN_PASSWORD\"" >> $OLD_CFG
+	fi
+}
+
+base_start() {
+	status
+	if [ $STAT = 0 ] && [ -n "$TRNT_PORT" ] && [ -n "$TRNT_RPC_PORT" ]; then
+		if [ -f $SWAP ]; then
+			swapon $SWAP 1> /dev/null || {
+				echo "Error: swap file is not loaded or corrupted! Please wait..." > $INFO
+				rm -f $SWAP
+				dd if=/dev/zero of=$SWAP bs=1048576 count=128 2> /dev/null
+				mkswap $SWAP 2> /dev/null
+				swapon $SWAP 1> /dev/null || {
+					echo "Swap file has not been fixed...Bye!" > $INFO 
+					exit 0
+				}
+				echo "Swap file fixed...OK!" > $INFO 
+			}
+		fi
+		echo "TRNT_PORT=$TRNT_PORT" >> $OLD_CFG
+		echo "TRNT_RPC_PORT=$TRNT_RPC_PORT" >> $OLD_CFG
+		iptables -D INPUT -p tcp --dport $TRNT_PORT -j ACCEPT 2> /dev/null
+		if [ "$OP_MODE" != 'WiFi Access Point' ] && [ "$OP_MODE" != 'Wireless Bridge' ]; then
+			iptables -A INPUT -p tcp --dport $TRNT_PORT -j ACCEPT
+		fi
+		iptables -D INPUT -p tcp --dport $TRNT_RPC_PORT -j ACCEPT 2> /dev/null
+		if [ "$TRNT_EXTERNAL_ACCESS_ENABLED" = 'Enabled' ] && [ "$OP_MODE" != 'WiFi Access Point' ] && [ "$OP_MODE" != 'Wireless Bridge' ]; then
+			iptables -A INPUT -p tcp --dport $TRNT_RPC_PORT -j ACCEPT
+		fi
+		rpc_access
+		transmissiond -a *.*.*.* -M -t -u $AUSER -v $APASSWD -w $DIR -g $BT_PATH -P $TRNT_PORT -p $TRNT_RPC_PORT
+		# start all
+		sleep 2
+		iptables -I INPUT -i lo -j ACCEPT
+		transmission-remote -n $AUSER:$APASSWD -tall -s
+		iptables -D INPUT -i lo -j ACCEPT
+		echo "Transmission running..." > $INFO
+	fi
+	if [ $STAT = 1 ]; then
+		echo "Transmission is already running..." > $INFO
+	fi
+}
+
+stop() {
+	status
+	if [ $STAT = 1 ]; then
+		PREV_STAT=1
+		if [ -f $OLD_CFG ]; then
+			. $OLD_CFG
+			iptables -D INPUT -p tcp --dport $TRNT_RPC_PORT -j ACCEPT 2> /dev/null
+			iptables -D INPUT -p tcp --dport $TRNT_PORT -j ACCEPT 2> /dev/null
+		else
+			rpc_access
+		fi
+		iptables -I INPUT -i lo -j ACCEPT
+		transmission-remote -n $AUSER:$APASSWD -tall -S
+		iptables -D INPUT -i lo -j ACCEPT 
+		sync
+		sleep 2
+		killall transmissiond 2> /dev/null
+		COUNT=160
+		while [ true ]; do
+			status
+			if [ $STAT = 0 ]; then
+				break
+			fi
+			COUNT=$((COUNT-1))
+			if [ $COUNT = 0 ]; then
+				killall -9 transmissiond 2> /dev/null
+			fi
+			sleep 1
+		done
+		if [ $FWUPDATE = 0 ] && [ -f $SWAP ]; then
+			swapoff $SWAP 2> /dev/null
+		fi
+		rm -f $OLD_CFG 2> /dev/null
+		echo "Transmission stopped..." > $INFO
+	else
+		PREV_STAT=0
+		if [ -f $OLD_CFG ]; then
+			. $OLD_CFG
+			iptables -D INPUT -p tcp --dport $TRNT_RPC_PORT -j ACCEPT 2> /dev/null
+			iptables -D INPUT -p tcp --dport $TRNT_PORT -j ACCEPT 2> /dev/null
+			if [ $FWUPDATE = 0 ] && [ -f $SWAP ]; then
+				swapoff $SWAP 2> /dev/null
+			fi
+			rm -f $OLD_CFG 2> /dev/null
+			echo "Transmission stopped..." > $INFO
+		fi
+	fi
+}
+
+start() {
+	eval `flash get NTP_ENABLED`
+	if [ "$NTP_ENABLED" = 'Enabled' ]; then
+		COUNT=20
+		while [ true ]; do
+			if [ -f $ZYNTP_LOG ]; then
+				base_start
+				break
+			fi
+			echo "Waiting for time synchronisation by NTP..." > $INFO
+			sleep 30
+			COUNT=$((COUNT-1))
+			if [ $COUNT = 0 ]; then
+				echo "Running failed due NTP server inaccessible..." > $INFO
+				break
+			fi
+		done
+	else
+		base_start
+	fi
+}
+
+case "$1" in
+	start)
+		if [ "$TRNT_ENABLED" = 'Disabled' ]; then
+			status
+			if [ $STAT = 1 ]; then
+				stop
+			fi
+			echo "Transmission disabled..." > $INFO
+			elif [ ! -d $BT_PATH ] || [ ! -f $SWAP ]; then
+				status
+			if [ $STAT = 1 ]; then
+				stop
+			fi
+			echo "Transmission is not installed on this disk..." > $INFO
+		elif [ "$OP_MODE" = 'WiFi Access Point' -o "$OP_MODE" = 'Wireless Bridge' ] && [ "$LAN_DEFAULT_GATEWAY" = "0.0.0.0" -o "$WAN_DNS1" = "0.0.0.0" -a "$WAN_DNS2" = "0.0.0.0" -a "$WAN_DNS3" = "0.0.0.0" ]; then
+			status
+			if [ $STAT = 1 ]; then
+				stop
+			fi
+			echo "<a href='/homenet/lan.asp'>Transmission is stopped, please set ip addresses for gateway and DNS...</a>" > $INFO
+			# auto
+		elif [ "$TRNT_AUTO_START_ENABLED" = 'Enabled' ] && [ "$DISK" = "$2" ]; then
+			start &
+			# manual
+		elif [ ! -n "$2" ]; then
+			base_start
+		else
+			echo "Transmission stopped..." > $INFO
+		fi
+		;;
+	stop)
+		# auto
+		if [ "$DISK" = "$2" ]; then
+			stop
+		fi
+		# manual
+		if [ "fwupdate" = "$2" ]; then
+			FWUPDATE=1
+			stop
+		fi
+		# manual
+		if [ ! -n "$2" ]; then
+		stop
+		fi
+		;;
+	restart)
+		stop
+		read_flash
+		if [ "$TRNT_ENABLED" = 'Disabled' ]; then
+			echo "Transmission disabled..." > $INFO
+		elif [ ! -d $BT_PATH ] || [ ! -f $SWAP ]; then
+			echo "Transmission is not installed on this disk..." > $INFO
+		elif [ "$OP_MODE" = 'WiFi Access Point' -o "$OP_MODE" = 'Wireless Bridge' ] && [ "$LAN_DEFAULT_GATEWAY" = "0.0.0.0" -o "$WAN_DNS1" = "0.0.0.0" -a "$WAN_DNS2" = "0.0.0.0" -a "$WAN_DNS3" = "0.0.0.0" ]; then
+			echo "<a href='/homenet/lan.asp'>Transmission is stopped, please set ip addresses for gateway and DNS...</a>" > $INFO
+		elif [ "$TRNT_AUTO_START_ENABLED" = 'Enabled' ] && [ $PREV_STAT = 1 ]; then
+			start &
+		elif [ $PREV_STAT = 1 ]; then
+			base_start
+		else
+			echo "Transmission stopped..." > $INFO
+		fi
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		;;
+esac
+

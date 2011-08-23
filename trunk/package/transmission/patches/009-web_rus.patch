@@ -1,0 +1,1777 @@
+diff -ruN transmission-1.91.orig/web/index.html transmission-1.91/web/index.html
+--- transmission-1.91.orig/web/index.html	2010-02-22 05:42:53.000000000 +0300
++++ transmission-1.91/web/index.html	2010-02-24 18:08:00.000000000 +0300
+@@ -1,4 +1,4 @@
+-<!DOCTYPE html>
++﻿<!DOCTYPE html>
+ <html>
+ 	<head>
+ 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+@@ -12,8 +12,8 @@
+ 		<link media="only screen and (max-device-width: 480px)" href="./stylesheets/iphone.css" type= "text/css" rel="stylesheet" />
+ 		<link media="screen and (min-device-width: 481px)" href="./stylesheets/common.css" type="text/css" rel="stylesheet" />
+ 		<!--[if IE]>
+-		  <link media="screen" href="./stylesheets/common.css" type="text/css" rel="stylesheet" />
+-		  <link media="screen" href="./stylesheets/ieAll.css" type="text/css" rel="stylesheet" />
++			<link media="screen" href="./stylesheets/common.css" type="text/css" rel="stylesheet" />
++			<link media="screen" href="./stylesheets/ieAll.css" type="text/css" rel="stylesheet" />
+ 		<![endif]-->
+ 		<!--[if IE 6]><link media="screen" href="./stylesheets/ie6.css" type="text/css" rel="stylesheet" /><![endif]-->
+ 		<!--[if IE 7]><link media="screen" href="./stylesheets/ie7.css" type="text/css" rel="stylesheet" /><![endif]-->
+@@ -27,49 +27,49 @@
+ 		<script type="text/javascript" src="./javascript/transmission.js"></script>
+ 		<script type="text/javascript" src="./javascript/torrent.js"></script>
+ 		<script type="text/javascript" src="./javascript/dialog.js"></script>
+-		<title>Transmission Web Interface</title>
++		<title>Transmission — веб-интерфейс</title>
+ 	</head>
+ 	<body id="transmission_body">
+ 
+ 		<div class="torrent_global_menu">
+-			 <ul>    
+-				 <li id="open"><div id="open_link"><div class="toolbar_image"></div>Open</div></li>
+-				 <li id="remove" class="disabled"><div id="remove_link"><div class="toolbar_image"></div>Remove</div></li>
+-				 <li class="divider">&nbsp;</li>
+-				 <li id="pause_selected" class="disabled"><div id="pause_selected_link"><div class="toolbar_image"></div>Pause</div></li>
+-				 <li id="resume_selected" class="disabled"><div id="resume_selected_link"><div class="toolbar_image"></div>Resume</div></li>
+-				 <li class="divider">&nbsp;</li>
+-				 <li id="pause_all" class="disabled"><div id="pause_all_link"><div class="toolbar_image"></div>Pause All</div></li>
+-				 <li id="resume_all" class="disabled"><div id="resume_all_link"><div class="toolbar_image"></div>Resume All</div></li>
+-				 <li id="inspector"><div id="inspector_link"><div class="toolbar_image"></div>Inspector</div></li>
+-				 <li id="filter"><div id="filter_toggle_link"><div class="toolbar_image"></div>Filter</div></li>
+-			 </ul>
++			<ul>    
++				<li id="open"><div id="open_link"><div class="toolbar_image"></div>Добавить</div></li>
++				<li id="remove" class="disabled"><div id="remove_link"><div class="toolbar_image"></div>Удалить</div></li>
++				<li class="divider">&nbsp;</li>
++				<li id="pause_selected" class="disabled"><div id="pause_selected_link"><div class="toolbar_image"></div>Остановить</div></li>
++				<li id="resume_selected" class="disabled"><div id="resume_selected_link"><div class="toolbar_image"></div>Возобновить</div></li>
++				<li class="divider">&nbsp;</li>
++				<li id="pause_all" class="disabled"><div id="pause_all_link"><div class="toolbar_image"></div>Остановить всё</div></li>
++				<li id="resume_all" class="disabled"><div id="resume_all_link"><div class="toolbar_image"></div>Возобновить всё</div></li>
++				<li id="inspector"><div id="inspector_link"><div class="toolbar_image"></div>Инспектор</div></li>
++				<li id="filter"><div id="filter_toggle_link"><div class="toolbar_image"></div>Фильтр</div></li>
++			</ul>
+ 		</div>
+ 		
+ 		<div class="torrent_global_details">
+-			<div id="torrent_global_transfer">0 Transfers</div>
+-			<div id="torrent_global_upload">0 B/s</div>
+-			<div id="torrent_global_download">0 B/s</div>
++			<div id="torrent_global_transfer">Торрентов: 0</div>
++			<div title="Скорость раздачи" id="torrent_global_upload">0 Байт/с</div>
++			<div title="Скорость закачки" id="torrent_global_download">0 Байт/с</div>
+ 		</div>
+ 		
+ 		<div id="torrent_filter_bar">
+-			<ul>    
+-				 <li><a href="#all" id="filter_all_link" class="active">All</a></li>
+-				 <li><a href="#downloading" id="filter_downloading_link">Downloading</a></li>
+-				 <li><a href="#seeding" id="filter_seeding_link">Seeding</a></li>
+-				 <li><a href="#paused" id="filter_paused_link">Paused</a></li>
++			<ul>
++				<li><a href="#all" id="filter_all_link" class="active">Все</a></li>
++				<li><a href="#downloading" id="filter_downloading_link">Закачка</a></li>
++				<li><a href="#seeding" id="filter_seeding_link">Раздача</a></li>
++				<li><a href="#paused" id="filter_paused_link">Ожидание</a></li>
+ 			</ul>
+-                        <input type="search" id="torrent_search" placeholder="Filter" results="0" />
++				<input type="search" id="torrent_search" placeholder="поиск" results="0" />
+ 		</div>
+ 		<div id="torrent_inspector" style="display:none;">
+ 			
+ 			<div style="display:none;" class="inspector_close" id="inspector_close"><img id="inspector_close_image" src="./images/buttons/cancel.png"/></div>
+ 
+ 			<div id="inspector_tabs">
+-				<div class="inspector_tab selected" id="inspector_tab_info"><a href="#info"><img src="images/buttons/info_general.png" alt="Information"/></a></div>
+-				<div class="inspector_tab" id="inspector_tab_activity"><a href="#activity"><img src="images/buttons/info_activity.png" alt="Activity"/></a></div>
+-				<div class="inspector_tab" id="inspector_tab_trackers"><a href="#trackers"><img src="images/buttons/info_trackers.png" alt="Trackers"/></a></div>
+-				<div class="inspector_tab" id="inspector_tab_files"><a href="#files"><img src="images/buttons/info_files.png" alt="Files"/></a></div>
++				<div title="Сведения" class="inspector_tab selected" id="inspector_tab_info"><a href="#info"><img src="images/buttons/info_general.png"/></a></div>
++				<div title="Активность" class="inspector_tab" id="inspector_tab_activity"><a href="#activity"><img src="images/buttons/info_activity.png"/></a></div>
++				<div title="Трекеры" class="inspector_tab" id="inspector_tab_trackers"><a href="#trackers"><img src="images/buttons/info_trackers.png" /></a></div>
++				<div title="Файлы" class="inspector_tab" id="inspector_tab_files"><a href="#files"><img src="images/buttons/info_files.png" /></a></div>
+ 			</div>
+ 			
+ 			<div id="inspector_header">
+@@ -79,42 +79,42 @@
+ 			
+ 			<div class="inspector_container" id="inspector_tab_info_container">
+ 				<div class="inspector_group">
+-					<div class="inspector_group_label">Information</div>
++					<div class="inspector_group_label">Сведения</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Pieces:</div>
++						<div class="inspector_label">Части:</div>
+ 						<div id="torrent_inspector_pieces"></div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Hash:</div>
++						<div class="inspector_label">Хеш:</div>
+ 						<div id="torrent_inspector_hash"></div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Secure:</div>
++						<div class="inspector_label">Приватность:</div>
+ 						<div id="torrent_inspector_secure"></div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Comment:</div>
++						<div class="inspector_label">Описание:</div>
+ 						<div id="torrent_inspector_comment"></div>
+ 					</div>
+ 				</div><!-- class="inspector_group"-->
+ 				
+ 				<div class="inspector_group">
+-					<div class="inspector_group_label">Created By</div>
++					<div class="inspector_group_label">Создан</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Creator:</div>
+-						<div id="torrent_inspector_creator">N/A</div>
++						<div class="inspector_label">Создатель:</div>
++						<div id="torrent_inspector_creator">н/д</div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Date:</div>
+-						<div id="torrent_inspector_creator_date">N/A</div>
++						<div class="inspector_label">Дата:</div>
++						<div id="torrent_inspector_creator_date">н/д</div>
+ 					</div>
+ 				</div><!-- class="inspector_group"-->
+ 
+ 				<div class="inspector_group">
+-					<div class="inspector_group_label">Where</div>
++					<div class="inspector_group_label">Расположение</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Download Dir:</div>
+-						<div id="torrent_inspector_download_dir">N/A</div>
++						<div class="inspector_label">Папка:</div>
++						<div id="torrent_inspector_download_dir">н/д</div>
+ 					</div>
+ 				</div><!-- class="inspector_group"-->
+ 			</div><!-- id="inspector_tab_info_container" -->
+@@ -122,54 +122,54 @@
+ 			<div style="display:none;" class="inspector_container" id="inspector_tab_activity_container">
+ 
+ 				<div class="inspector_group">
+-					<div class="inspector_group_label">Activity</div>
++					<div class="inspector_group_label">Активность</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">State:</div>
+-						<div id="torrent_inspector_state">N/A</div>
++						<div class="inspector_label">Состояние:</div>
++						<div id="torrent_inspector_state">н/д</div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Progress:</div>
+-						<div id="torrent_inspector_progress">N/A</div>
++						<div class="inspector_label">Готовность:</div>
++						<div id="torrent_inspector_progress">н/д</div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Have:</div>
+-						<div id="torrent_inspector_have">N/A</div>
++						<div class="inspector_label">Загружено:</div>
++						<div id="torrent_inspector_have">н/д</div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Downloaded:</div>
+-						<div id="torrent_inspector_downloaded">N/A</div>
++						<div class="inspector_label">Принято:</div>
++						<div id="torrent_inspector_downloaded">н/д</div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Uploaded:</div>
+-						<div id="torrent_inspector_uploaded">N/A</div>
++						<div class="inspector_label">Отдано:</div>
++						<div id="torrent_inspector_uploaded">н/д</div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Ratio:</div>
+-						<div id="torrent_inspector_ratio">N/A</div>
++						<div class="inspector_label">Рейтинг:</div>
++						<div id="torrent_inspector_ratio">н/д</div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">Error:</div>
+-						<div id="torrent_inspector_error">N/A</div>
++						<div class="inspector_label">Ошибка:</div>
++						<div id="torrent_inspector_error">н/д</div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">DL Speed:</div>
+-						<div id="torrent_inspector_download_speed">N/A</div>
++						<div class="inspector_label">Приём:</div>
++						<div id="torrent_inspector_download_speed">н/д</div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">UL Speed:</div>
+-						<div id="torrent_inspector_upload_speed">N/A</div>
++						<div class="inspector_label">Раздача:</div>
++						<div id="torrent_inspector_upload_speed">н/д</div>
+ 					</div>
+ 				</div><!-- class="inspector_group"-->
+ 				
+ 				<div class="inspector_group">
+-					<div class="inspector_group_label">Peers</div>
++					<div class="inspector_group_label">Участники обмена</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">UL To:</div>
+-						<div id="torrent_inspector_upload_to">N/A</div>
++						<div class="inspector_label">Закачивающие:</div>
++						<div id="torrent_inspector_upload_to">н/д</div>
+ 					</div>
+ 					<div class="inspector_row">
+-						<div class="inspector_label">DL From:</div>
+-						<div id="torrent_inspector_download_from">N/A</div>
++						<div class="inspector_label">Раздающие:</div>
++						<div id="torrent_inspector_download_from">н/д</div>
+ 					</div>
+ 				</div><!-- class="inspector_group"-->
+ 			</div><!-- id="inspector_tab_activity_container" -->
+@@ -182,8 +182,8 @@
+ 			<div style="display:none;" class="inspector_container" id="inspector_tab_files_container">
+ 				<div id="inspector_file_list">
+ 					<ul id="select_all_button_container">
+-						<li id="files_deselect_all" class="select_all_button">Deselect All</li>
+-						<li id="files_select_all" class="select_all_button">Select All</li>
++						<li id="files_deselect_all" class="select_all_button">Снять выделение</li>
++						<li id="files_select_all" class="select_all_button">Выделить всё</li>
+ 					</ul>
+ 				</div>
+ 			</div><!-- id="inspector_tab_files_container" -->
+@@ -199,228 +199,231 @@
+ 		<div class="dialog_container" id="dialog_container" style="display:none;">
+ 			<div class="dialog_top_bar"></div>
+ 			<div class="dialog_window">
+-				<img src="images/graphics/logo.png" alt="Transmission Logo" />
++				<img src="images/graphics/logo.png" alt="Transmission" />
+ 				<h2 class="dialog_heading" id="dialog_heading"></h2>
+ 				<div class="dialog_message" id="dialog_message"></div>
+-				<a href="#confirm" id="dialog_confirm_button">Confirm</a>
+-				<a href="#cancel" id="dialog_cancel_button">Cancel</a>			
+-        	</div>
++				<a href="#confirm" id="dialog_confirm_button">Применить</a>
++				<a href="#cancel" id="dialog_cancel_button">Отмена</a>			
++			</div>
+ 		</div>
+ 		
+ 		<div class="dialog_container" id="prefs_container" style="display:none;">
+ 			<div class="dialog_top_bar"></div>
+ 			<div class="dialog_window">
+-				<h2 class="dialog_heading">Preferences</h2>
++				<h2 class="dialog_heading">Настройки</h2>
+ 				<div id="pref_error"></div>
+ 				<form action="" id="prefs_form">
+ 					<div id="prefs_tabs">
+ 						<ul>
+-							<li id="prefs_tab_general_tab" class="prefs_tab_enabled">General</li>
+-							<li id="prefs_tab_speed_tab" class="prefs_tab_disabled">Speed</li>
++							<li id="prefs_tab_general_tab" class="prefs_tab_enabled">Общие</li>
++							<li id="prefs_tab_speed_tab" class="prefs_tab_disabled">Скорость</li>
+ 						</ul>
+ 						<div id="prefs_tab_general" class="prefs_tab">
+ 							<div class="preference download_location">
+-								<label class="category">Add transfers:</label>
++								<label class="category">Расположение закаченных файлов:</label>
+ 								<div class="formdiv">
+-									<label for="download_location" class="item">Download to:</label>
++									<label for="download_location" class="item">Закачивать в папку:</label>
+ 									<input type="text" name="download_location" id="download_location"/>
+ 								</div>
+ 								<div class="formdiv checkbox auto_start">
+ 									<input type="checkbox" name="auto_start" id="auto_start"/>
+-									<label for="auto_start" class="item">Start transfers when added</label>
++									<label for="auto_start" class="item">Запускать закачку автоматически</label>
+ 								</div>
+ 							</div>
++							
+ 							<div class="preference port">
+-								<label class="category">Network:</label>
++								<label class="category">Соединение:</label>
+ 								<div class="formdiv">
+-									<label for="port" class="item">Incoming TCP Port:</label>
++									<label for="port" class="item">Порт TCP для входящих соединений:</label>
+ 									<input type="text" id="port" name="port"/>
+ 								</div>
+ 							</div>
+ 							<div class="preference encryption">
+-								<label class="category">Encryption:</label>
++								<label class="category">Шифрование:</label>
+ 								<div class="formdiv checkbox">
+ 									<input type="checkbox" name="encryption" id="encryption"/>
+-									<label for="encryption" class="item">Ignore unencrypted peers</label>
++									<label for="encryption" class="item">Требовать шифрование</label>
+ 								</div>
+ 							</div>
+ 							<div class="preference web_gui">
+-								<label class="category">Web Client:</label>
++								<label class="category">Веб-клиент:</label>
+ 								<div class="formdiv">
+-									<label for="refresh_rate" class="item">Refresh Rate:</label>
++									<label for="refresh_rate" class="item">Частота обновления:</label>
+ 									<input type="text" name="refresh_rate" id="refresh_rate"/>
+-									<label class="suffix">seconds</label>
++									<label class="suffix">секунд</label>
+ 								</div>
+ 							</div>
+ 							<div style="clear: both; visibility: hidden;"></div>
+ 						</div>
+ 						<div id="prefs_tab_speed" class="prefs_tab" style="display: none;">
+ 							<div class="preference limit_total">
+-								<label class="category">Speed Limits:</label>
++								<label class="category">Ограничения</label>
+ 								<div class="formdiv checkbox">
+ 									<input type="checkbox" name="limit_download" id="limit_download"/>
+-									<label for="limit_download" class="item">Download Rate:</label>
++									<label for="limit_download" class="item">закачки:</label>
+ 									<input type="text" name="download_rate" id="download_rate"/>
+-									<label class="suffix">KB/s</label>
++									<label class="suffix">кБ/с</label>
+ 								</div>
+ 								<div class="formdiv checkbox">
+ 									<input type="checkbox" name="limit_upload" id="limit_upload"/>
+-									<label for="limit_upload" class="item">Upload Rate:</label>
++									<label for="limit_upload" class="item">раздачи:</label>
+ 									<input type="text" name="upload_rate" id="upload_rate"/>
+-									<label class="suffix">KB/s</label>
++									<label class="suffix">кБ/с</label>
+ 								</div>
+ 							</div>
+ 							<div class="preference limit_turtle">
+-								<label class="category">Temporary Speed Limits: (Turtle)</label>
+-								<label>Override normal speed limits manually or at scheduled times</label>
++								<label class="category">Ограничения в режиме "Черепашка"</label>
++								<label>Изменяет установленные ограничения по расписанию или по требованию.</label>
+ 								<div class="formdiv">
+-									<label for="turtle_download_rate" class="item">Download Rate:</label>
++									<label class="item">Закачка:</label>
+ 									<input type="text" name="turtle_download_rate" id="turtle_download_rate"/>
+-									<label class="suffix">KB/s</label>
++									<label class="suffix">кБ/с</label>
+ 								</div>
+ 								<div class="formdiv">
+-									<label for="turtle_upload_rate" class="item">Upload Rate:</label>
++									<label class="item">Раздача:</label>
+ 									<input type="text" name="turtle_upload_rate" id="turtle_upload_rate"/>
+-									<label class="suffix">KB/s</label>
++									<label class="suffix">кБ/с</label>
++								</div>
++								<div class="formdiv">
++									<label class="item">Включать режим:</label>
++									<select name="turtle_days" id="turtle_days" size="1">
++										<option value="127">ежедневно</option>
++										<option value="62">по будням</option>
++										<option value="65">по выходным</option>
++										<option value="2">по понедельникам</option>
++										<option value="4">по вторникам</option>
++										<option value="8">по средам</option>
++										<option value="16">по четвернам</option>
++										<option value="32">по пятницам</option>
++										<option value="64">по субботам</option>
++										<option value="1">по воскресеньям</option>
++									</select>
+ 								</div>
+ 								<div class="formdiv checkbox">
+ 									<input type="checkbox" name="turtle_schedule" id="turtle_schedule"/>
+-									<label for="turtle_schedule" class="item">Scheduled times:</label>
+-									<select name="turtle_start_time" id="turtle_start_time" size="1">
++									<label for="turtle_schedule" class="item">часы работы:</label>
++									&nbsp;с&nbsp;<select name="turtle_start_time" id="turtle_start_time" size="1">
+ 									</select>
+-									<select name="turtle_end_time" id="turtle_end_time" size="1">
+-									</select>
+-								</div>
+-								<div class="formdiv">
+-									<label for="turtle_days" class="item">On days:</label>
+-									<select name="turtle_days" id="turtle_days" size="1">
+-										<option value="127">Everyday</option>
+-										<option value="62">Weekdays</option>
+-										<option value="65">Weekends</option>
+-										<option value="1">Sunday</option>
+-										<option value="2">Monday</option>
+-										<option value="4">Tuesday</option>
+-										<option value="8">Wednesday</option>
+-										<option value="16">Thursday</option>
+-										<option value="32">Friday</option>
+-										<option value="64">Saturday</option>
++									&nbsp;до&nbsp;<select name="turtle_end_time" id="turtle_end_time" size="1">
+ 									</select>
+ 								</div>
++								
+ 							</div>
+ 							<div style="clear: both; visibility: hidden;"></div>
+ 						</div>
+ 					</div>
+ 					<span id="transmission_version"></span>
+-					<a href="#save" id="prefs_save_button">Save</a>
+-					<a href="#cancel" id="prefs_cancel_button">Cancel</a>
+-				</form>
++					<a href="#cancel" id="prefs_cancel_button">Отмена</a>
++					<a href="#save" id="prefs_save_button">Применить</a>
++					</form>
+ 			</div>
+ 		</div>
+ 		
+ 		<div class="dialog_container" id="upload_container" style="display:none;">
+ 			<div class="dialog_top_bar"></div>
+ 			<div class="dialog_window">
+-				<img src="images/graphics/logo.png" alt="Transmission Logo" />
+-				<h2 class="dialog_heading">Upload Torrent Files</h2>
++				<img src="images/graphics/logo.png" alt="Transmission"/>
++				<h2 class="dialog_heading">Добавить торрент</h2>
+ 				<form action="#" method="post" id="torrent_upload_form" 
+-					enctype="multipart/form-data" target="torrent_upload_frame">  
++					enctype="multipart/form-data" target="torrent_upload_frame">
+ 					<div class="dialog_message">
+-						<label for="torrent_upload_file">Please select a torrent file to upload:</label>
++						<label for="torrent_upload_file">Укажите расположение торрент-файла:</label>
+ 							<input type="file" name="torrent_files[]" id="torrent_upload_file" multiple="multiple" />
+-						<label for="torrent_upload_url">Or enter a URL:</label>
++						<label for="torrent_upload_url">или добавьте торрент по ссылке:</label>
+ 							<input type="text" id="torrent_upload_url"/>
+-							<input type="checkbox" id="torrent_auto_start" />
+-						<label for="torrent_auto_start" id="auto_start_label">Start when added</label>
++							<input type="checkbox" id="torrent_auto_start"/>
++						<label for="torrent_auto_start" id="auto_start_label">Запустить после добавления</label>
+ 					</div>
+-					<a href="#upload" id="upload_confirm_button">Upload</a>
+-					<a href="#cancel" id="upload_cancel_button">Cancel</a>
++					<a href="#cancel" id="upload_cancel_button">Отмена</a>
++					<a href="#upload" id="upload_confirm_button">Добавить</a>
++
+ 				</form>
+ 			</div>
+ 		</div>
+ 		<div class="torrent_footer">	
+-			<div id="disk_space_container"></div>	
++		<div id="disk_space_container"></div>
+ 			<ul id="settings_menu">
+ 				<li id="button">&nbsp;
+ 					<ul id="footer_super_menu">
+-						<li id="preferences">Preferences</li>
++						<li id="preferences">Настройки</li>
+ 						<li class="separator"></li>
+-						<li>Total Download Rate
++						<li>Ограничение закачки
+ 							<ul id="footer_download_rate_menu">
+-								<li id="unlimited_download_rate">Unlimited</li>
+-								<li id="limited_download_rate">Limit (10 KB/s)</li>
++								<li id="unlimited_download_rate">Не ограничена</li>
++								<li id="limited_download_rate">10 кБ/с</li>
+ 								<li class="separator"></li>
+-								<li>5 KB/s</li>
+-								<li>10 KB/s</li>
+-								<li>20 KB/s</li>
+-								<li>30 KB/s</li>
+-								<li>40 KB/s</li>
+-								<li>50 KB/s</li>
+-								<li>75 KB/s</li>
+-								<li>100 KB/s</li>
+-								<li>150 KB/s</li>
+-								<li>200 KB/s</li>
+-								<li>250 KB/s</li>
+-								<li>500 KB/s</li>
+-								<li>750 KB/s</li>
++								<li>5 кБ/с</li>
++								<li>10 кБ/с</li>
++								<li>20 кБ/с</li>
++								<li>30 кБ/с</li>
++								<li>40 кБ/с</li>
++								<li>50 кБ/с</li>
++								<li>75 кБ/с</li>
++								<li>100 кБ/с</li>
++								<li>150 кБ/с</li>
++								<li>200 кБ/с</li>
++								<li>250 кБ/с</li>
++								<li>500 кБ/с</li>
++								<li>750 кБ/с</li>
+ 							</ul>
+ 						</li>
+-						<li>Total Upload Rate
++						<li>Ограничение раздачи
+ 							<ul id="footer_upload_rate_menu">
+-								<li id="unlimited_upload_rate">Unlimited</li>
+-								<li id="limited_upload_rate">Limit (10 KB/s)</li>
++								<li id="unlimited_upload_rate">Не ограничена</li>
++								<li id="limited_upload_rate">10 кБ/с</li>
+ 								<li class="separator"></li>
+-								<li>5 KB/s</li>
+-								<li>10 KB/s</li>
+-								<li>20 KB/s</li>
+-								<li>30 KB/s</li>
+-								<li>40 KB/s</li>
+-								<li>50 KB/s</li>
+-								<li>75 KB/s</li>
+-								<li>100 KB/s</li>
+-								<li>150 KB/s</li>
+-								<li>200 KB/s</li>
+-								<li>250 KB/s</li>
+-								<li>500 KB/s</li>
+-								<li>750 KB/s</li>
++								<li>5 кБ/с</li>
++								<li>10 кБ/с</li>
++								<li>20 кБ/с</li>
++								<li>30 кБ/с</li>
++								<li>40 кБ/с</li>
++								<li>50 кБ/с</li>
++								<li>75 кБ/с</li>
++								<li>100 кБ/с</li>
++								<li>150 кБ/с</li>
++								<li>200 кБ/с</li>
++								<li>250 кБ/с</li>
++								<li>500 кБ/с</li>
++								<li>750 кБ/с</li>
+ 							</ul>
+ 						</li>
+ 						<li class="separator"></li>
+-						<li>Sort Transfers By
++						<li>Сортировка
+ 							<ul id="footer_sort_menu">
+-								<li id="sort_by_activity">Activity</li>
+-								<li id="sort_by_age">Age</li>
+-								<li id="sort_by_name">Name</li>
+-								<li id="sort_by_percent_completed">Progress</li>
+-								<li id="sort_by_queue_order">Queue Order</li>
+-								<li id="sort_by_state">State</li>
++								<li id="sort_by_activity">Активность</li>
++								<li id="sort_by_age">Возраст</li>
++								<li id="sort_by_name">Имя</li>
++								<li id="sort_by_percent_completed">Готовность</li>
++								<li id="sort_by_queue_order">Очередь</li>
++								<li id="sort_by_state">Состояние</li>
+ 								<li class="separator"></li>
+-								<li id="reverse_sort_order">Reverse Sort Order</li>
++								<li id="reverse_sort_order">В обратном порядке</li>
+ 							</ul>
+ 						</li>
+ 					</ul>
+ 				</li>
+ 			</ul>
+-			<div id="turtle_button">&nbsp;</div>
++			<div title="Режим «Черепашка»" id="turtle_button">&nbsp;</div>
+ 			<div style="clear: both; visibility: hidden;"></div>
+ 		</div>
+ 		
+ <div class="contextMenu" id="torrent_context_menu">
+ 			<ul>
+-				<li id="context_pause_selected" class="disabled context_pause_selected">Pause Selected</li>
+-				<li id="context_resume_selected" class="disabled context_resume_selected">Resume Selected</li>
++				<li id="context_pause_selected" class="disabled context_pause_selected">Остановить выбранные</li>
++				<li id="context_resume_selected" class="disabled context_resume_selected">Возобновить выбранные</li>
+ 				<li class="separator"></li>
+-				<li id="context_remove">Remove From List...</li>
+-				<li id="context_removedata">Trash Data & Remove From List...</li>
++				<li id="context_remove">Удалить торрент-файл...</li>
++				<li id="context_removedata">Удалить торрент вместе с данными...</li>
+ 				<li class="separator"></li>
+-				<li id="context_verify">Verify Local Data</li>
++				<li id="context_verify">Проверить локальные данные</li>
+ 				<li class="separator"></li>
+-				<li id="context_toggle_inspector">Show Inspector</li>
++				<li id="context_toggle_inspector">Показать панель "Инспектор"</li>
+ 				<li class="separator"></li>
+-				<li id="context_select_all" class="context_select_all">Select All</li>
+-				<li id="context_deselect_all" class="context_deselect_all">Deselect All</li>
++				<li id="context_select_all" class="context_select_all">Выделить всё</li>
++				<li id="context_deselect_all" class="context_deselect_all">Снять выделение</li>
+ 			</ul>
+ 		</div>
+ 		
+-		<iframe name="torrent_upload_frame" id="torrent_upload_frame" src="about:blank" ></iframe>
++		<iframe name="torrent_upload_frame" id="torrent_upload_frame" src="about:blank"></iframe>
+ 	</body>
+ </html>
+diff -ruN transmission-1.91.orig/web/javascript/common.js transmission-1.91/web/javascript/common.js
+--- transmission-1.91.orig/web/javascript/common.js	2010-02-24 11:59:44.000000000 +0300
++++ transmission-1.91/web/javascript/common.js	2009-09-28 04:16:00.000000000 +0400
+@@ -17,19 +17,19 @@
+ 
+ function testSafari3()
+ {
+-    var minimum = new Array(412,0);
+-    var webKitFields = RegExp("( AppleWebKit/)([^ ]+)").exec(navigator.userAgent);
+-    if (!webKitFields || webKitFields.length < 3) return false;
+-    var version = webKitFields[2].split(".");
+-    for (var i = 0; i < minimum.length; i++) {
+-        var toInt = parseInt(version[i]);
+-        var versionField = isNaN(toInt) ? 0 : toInt;
+-        var minimumField = minimum[i];
+-
+-        if (versionField > minimumField) return true;
+-        if (versionField < minimumField) return false;
+-    }
+-    return true;
++	var minimum = new Array(412,0);
++	var webKitFields = RegExp("( AppleWebKit/)([^ ]+)").exec(navigator.userAgent);
++	if (!webKitFields || webKitFields.length < 3) return false;
++	var version = webKitFields[2].split(".");
++	for (var i = 0; i < minimum.length; i++) {
++		var toInt = parseInt(version[i]);
++		var versionField = isNaN(toInt) ? 0 : toInt;
++		var minimumField = minimum[i];
++
++		if (versionField > minimumField) return true;
++		if (versionField < minimumField) return false;
++	}
++	return true;
+ };
+ 
+ $(document).ready( function() {
+@@ -98,7 +98,7 @@
+ function setInnerHTML( e, html )
+ {
+ 	/* innerHTML is listed as a string, but the browser seems to change it.
+-	 * For example, "&infin;" gets changed to "∞" somewhere down the line.
++	 * For example, "&infin;" gets changed to "?" somewhere down the line.
+ 	 * So, let's use an arbitrary  different field to test our state... */
+ 	if( e.currentHTML != html )
+ 	{
+@@ -115,48 +115,48 @@
+  *   @returns string
+  */
+ Math.formatBytes = function(bytes) {
+-    var size;
+-    var unit;
++	var size;
++	var unit;
+ 
+-    // Terabytes (TB).
+-    if ( bytes >= 1099511627776 ) {
+-        size = bytes / 1099511627776;
+-		unit = ' TB';
+-
+-    // Gigabytes (GB).
+-    } else if ( bytes >= 1073741824 ) {
+-        size = bytes / 1073741824;
+-		unit = ' GB';
+-
+-    // Megabytes (MB).
+-    } else if ( bytes >= 1048576 ) {
+-        size = bytes / 1048576;
+-		unit = ' MB';
+-
+-    // Kilobytes (KB).
+-    } else if ( bytes >= 1024 ) {
+-        size = bytes / 1024;
+-		unit = ' KB';
+-
+-    // The file is less than one KB
+-    } else {
+-        size = bytes;
+-		unit = ' bytes';
+-    }
++	// Terabytes (TB).
++	if ( bytes >= 1099511627776 ) {
++		size = bytes / 1099511627776;
++		unit = ' ТБ';
++
++	// Gigabytes (GB).
++	} else if ( bytes >= 1073741824 ) {
++		size = bytes / 1073741824;
++		unit = ' ГБ';
++
++	// Megabytes (MB).
++	} else if ( bytes >= 1048576 ) {
++		size = bytes / 1048576;
++		unit = ' МБ';
++
++	// Kilobytes (KB).
++	} else if ( bytes >= 1024 ) {
++		size = bytes / 1024;
++		unit = ' кБ';
++
++	// The file is less than one KB
++	} else {
++		size = bytes;
++		unit = ' байт';
++	}
+ 	
+ 	// Single-digit numbers have greater precision
+ 	var precision = 1;
+ 	if (size < 10) {
+-	    precision = 2;
++		precision = 2;
+ 	}
+ 	size = Math.roundWithPrecision(size, precision);
+ 
+ 	// Add the decimal if this is an integer
+-	if ((size % 1) == 0 && unit != ' bytes') {
++	if ((size % 1) == 0 && unit != ' байт') {
+ 		size = size + '.0';
+ 	}
+ 
+-    return size + unit;
++	return size + unit;
+ };
+ 
+ 
+@@ -173,21 +173,22 @@
+ 	var hours = Math.floor((seconds % 86400) / 3600);
+ 	var minutes = Math.floor((seconds % 3600) / 60);
+ 	var seconds = Math.floor((seconds % 3600) % 60);
++	
+ 
+ 	if (days > 0 && hours == 0)
+-		result = days + ' days';
++		result = days + ' дн';
+ 	else if (days > 0 && hours > 0)
+-		result = days + ' days ' + hours + ' hr';
++		result = days + ' дн ' + hours + ' ч';
+ 	else if (hours > 0 && minutes == 0)
+-		result = hours + ' hr';
++		result = hours + ' ч';
+ 	else if (hours > 0 && minutes > 0)
+-		result = hours + ' hr ' + minutes + ' min';
++		result = hours + ' ч ' + minutes + ' мин';
+ 	else if (minutes > 0 && seconds == 0)
+-		result = minutes + ' min';
++		result = minutes + ' м';
+ 	else if (minutes > 0 && seconds > 0)
+-		result = minutes + ' min ' + seconds + ' seconds';
++		result = minutes + ' мин ' + seconds + ' с';
+ 	else
+-		result = seconds + ' seconds';
++		result = seconds + ' с';
+ 
+ 	return result;
+ };
+@@ -212,13 +213,13 @@
+ 	var dateDiff = now.getDate() - myDate.getDate();
+ 	if(sameYear && sameMonth && Math.abs(dateDiff) <= 1){
+ 		if(dateDiff == 0){
+-			date = "Today";
++			date = "Сегодня в";
+ 		}
+ 		else if(dateDiff == 1){
+-			date = "Yesterday";
++			date = "Вчера в";
+ 		}
+ 		else{
+-			date = "Tomorrow";
++			date = "Завтра в";
+ 		}
+ 	}
+ 	else{
+@@ -226,18 +227,20 @@
+ 	}
+ 
+ 	var hours = myDate.getHours();
+-	var period = "AM";
+-	if(hours > 12){
+-		hours = hours - 12;
+-		period = "PM";
+-	}
+-	if(hours == 0){
+-		hours = 12;
+-	}
+-
++/*	var period = "AM";
++*	if(hours > 12){
++*		hours = hours - 12;
++*		period = "PM";
++*	}
++*	if(hours == 0){
++*		hours = 12;
++*	}
++*/
+ 	time = [hours, myDate.getMinutes(), myDate.getSeconds()].join(':');
+ 
+-	return [date, time, period].join(' ');
++//	return [date, time, period].join(' ');
++
++return [date, time].join(' ');
+ };
+ 
+ /*
+@@ -249,7 +252,7 @@
+  *   @returns float
+  */
+ Math.roundWithPrecision = function(floatnum, precision) {
+-    return Math.round ( floatnum * Math.pow ( 10, precision ) ) / Math.pow ( 10, precision );
++	return Math.round ( floatnum * Math.pow ( 10, precision ) ) / Math.pow ( 10, precision );
+ };
+ 
+ 
+@@ -283,9 +286,9 @@
+  */
+ String.prototype.compareTo = function( that ) {
+ 	// FIXME: how to fold these two comparisons together?
+-        if( this < that ) return -1;
+-        if( this > that ) return 1;
+-        return 0;
++		if( this < that ) return -1;
++		if( this > that ) return 1;
++		return 0;
+ }
+ 
+ /**
+@@ -319,35 +322,35 @@
+ function Prefs() { }
+ Prefs.prototype = { };
+ 
+-Prefs._AutoStart          = 'auto-start-torrents';
++Prefs._AutoStart			= 'auto-start-torrents';
+ 
+-Prefs._RefreshRate        = 'refresh_rate';
+-Prefs._SessionRefreshRate        = 'session_refresh_rate';
++Prefs._RefreshRate			= 'refresh_rate';
++Prefs._SessionRefreshRate	= 'session_refresh_rate';
+ 
+-Prefs._ShowFilter         = 'show_filter';
++Prefs._ShowFilter			= 'show_filter';
+ 
+-Prefs._ShowInspector      = 'show_inspector';
++Prefs._ShowInspector		= 'show_inspector';
+ 
+-Prefs._FilterMode         = 'filter';
+-Prefs._FilterAll          = 'all';
+-Prefs._FilterSeeding      = 'seeding';
+-Prefs._FilterDownloading  = 'downloading';
+-Prefs._FilterPaused       = 'paused';
+-
+-Prefs._SortDirection      = 'sort_direction';
+-Prefs._SortAscending      = 'ascending';
+-Prefs._SortDescending     = 'descending';
+-
+-Prefs._SortMethod         = 'sort_method';
+-Prefs._SortByAge          = 'age';
+-Prefs._SortByActivity     = 'activity';
+-Prefs._SortByQueue        = 'queue_order';
+-Prefs._SortByName         = 'name';
+-Prefs._SortByProgress     = 'percent_completed';
+-Prefs._SortByState        = 'state';
+-Prefs._SortByTracker      = 'tracker';
++Prefs._FilterMode			= 'filter';
++Prefs._FilterAll			= 'all';
++Prefs._FilterSeeding		= 'seeding';
++Prefs._FilterDownloading	= 'downloading';
++Prefs._FilterPaused			= 'paused';
++
++Prefs._SortDirection		= 'sort_direction';
++Prefs._SortAscending		= 'ascending';
++Prefs._SortDescending		= 'descending';
++
++Prefs._SortMethod			= 'sort_method';
++Prefs._SortByAge			= 'age';
++Prefs._SortByActivity		= 'activity';
++Prefs._SortByQueue			= 'queue_order';
++Prefs._SortByName			= 'name';
++Prefs._SortByProgress		= 'percent_completed';
++Prefs._SortByState			= 'state';
++Prefs._SortByTracker		= 'tracker';
+ 
+-Prefs._TurtleState        = 'turtle-state';
++Prefs._TurtleState			= 'turtle-state';
+ 
+ Prefs._Defaults =
+ {
+@@ -357,7 +360,7 @@
+ 	'show_filter': true,
+ 	'show_inspector': false,
+ 	'sort_direction': 'ascending',
+-	'sort_method': 'name',
++	'sort_method': 'queue_order',
+ 	'turtle-state' : false
+ };
+ 
+@@ -388,8 +391,8 @@
+ 	if( Prefs._Defaults[key] == undefined )
+ 		console.warn( "unrecognized preference key '%s'", key );
+ 
+-        var lines = document.cookie.split( ';' );
+-        for( var i=0, len=lines.length; !val && i<len; ++i ) {
++		var lines = document.cookie.split( ';' );
++		for( var i=0, len=lines.length; !val && i<len; ++i ) {
+ 		var line = lines[i].trim( );
+ 		var delim = line.indexOf( '=' );
+ 		if( ( delim == key.length ) && line.indexOf( key ) == 0 )
+diff -ruN transmission-1.91.orig/web/javascript/dialog.js transmission-1.91/web/javascript/dialog.js
+--- transmission-1.91.orig/web/javascript/dialog.js	2010-02-22 05:42:53.000000000 +0300
++++ transmission-1.91/web/javascript/dialog.js	2009-09-28 04:08:00.000000000 +0400
+@@ -12,9 +12,9 @@
+ 
+ Dialog.prototype = {
+ 
+-    /*
+-     * Constructor
+-     */
++	/*
++	 * Constructor
++	 */
+     initialize: function() {
+ 		
+ 		/*
+@@ -37,11 +37,11 @@
+ 
+ 
+ 
+-    /*--------------------------------------------
+-     *
+-     *  E V E N T   F U N C T I O N S
+-     *
+-     *--------------------------------------------*/
++	/*--------------------------------------------
++	 *
++	 *  E V E N T   F U N C T I O N S
++	 *
++	 *--------------------------------------------*/
+ 
+ 	hideDialog: function( )
+ 	{
+@@ -68,16 +68,16 @@
+ 		dialog.hideDialog( );
+ 	},
+ 
+-    /*--------------------------------------------
+-     *
+-     *  I N T E R F A C E   F U N C T I O N S
+-     *
+-     *--------------------------------------------*/
+-
+-    /*
+-     * Display a confirm dialog
+-     */
+-    confirm: function(dialog_heading, dialog_message, confirm_button_label, callback_function, callback_data, cancel_button_label) {
++	/*--------------------------------------------
++	 *
++	 *  I N T E R F A C E   F U N C T I O N S
++	 *
++	 *--------------------------------------------*/
++
++	/*
++	 * Display a confirm dialog
++	 */
++	confirm: function(dialog_heading, dialog_message, confirm_button_label, callback_function, callback_data, cancel_button_label) {
+ 		if (!iPhone && Safari3) {
+ 			$('div#upload_container div.dialog_window').css('top', '-205px');
+ 			$('div#prefs_container div.dialog_window').css('top', '-425px');
+@@ -88,7 +88,7 @@
+ 		}
+ 		setInnerHTML( this._heading[0], dialog_heading );
+ 		setInnerHTML( this._message[0], dialog_message );
+-		setInnerHTML( this._cancel_button[0], (cancel_button_label == null) ? 'Cancel' : cancel_button_label );
++		setInnerHTML( this._cancel_button[0], (cancel_button_label == null) ? 'Отмена' : cancel_button_label );
+ 		setInnerHTML( this._confirm_button[0], confirm_button_label );
+ 		this._confirm_button.show();
+ 		this._callback_function = callback_function;
+@@ -103,10 +103,10 @@
+ 		}
+ 	},
+  
+-    /*
+-     * Display an alert dialog
+-     */
+-    alert: function(dialog_heading, dialog_message, cancel_button_label) {
++	/*
++	 * Display an alert dialog
++	 */
++	alert: function(dialog_heading, dialog_message, cancel_button_label) {
+ 		if (!iPhone && Safari3) {
+ 			$('div#upload_container div.dialog_window').css('top', '-205px');
+ 			$('div#prefs_container div.dialog_window').css('top', '-425px');
+@@ -142,6 +142,4 @@
+ 			this._container.show();
+ 		}
+ 	}
+-	
+-
+ }
+diff -ruN transmission-1.91.orig/web/javascript/torrent.js transmission-1.91/web/javascript/torrent.js
+--- transmission-1.91.orig/web/javascript/torrent.js	2010-02-22 05:42:53.000000000 +0300
++++ transmission-1.91/web/javascript/torrent.js	2009-09-28 04:22:00.000000000 +0400
+@@ -12,25 +12,25 @@
+ 
+ // Constants
+ Torrent._StatusWaitingToCheck  = 1;
+-Torrent._StatusChecking        = 2;
+-Torrent._StatusDownloading     = 4;
+-Torrent._StatusSeeding         = 8;
+-Torrent._StatusPaused          = 16;
++Torrent._StatusChecking		= 2;
++Torrent._StatusDownloading	 = 4;
++Torrent._StatusSeeding		 = 8;
++Torrent._StatusPaused		  = 16;
+ Torrent._InfiniteTimeRemaining = 215784000; // 999 Hours - may as well be infinite
+ 
+-Torrent._RatioUseGlobal        = 0;
+-Torrent._RatioUseLocal         = 1;
+-Torrent._RatioUnlimited        = 2;
+-
+-Torrent._ErrNone               = 0;
+-Torrent._ErrTrackerWarning     = 1;
+-Torrent._ErrTrackerError       = 2;
+-Torrent._ErrLocalError         = 3;
+-
+-Torrent._TrackerInactive         = 0;
+-Torrent._TrackerWaiting          = 1;
+-Torrent._TrackerQueued           = 2;
+-Torrent._TrackerActive           = 3;
++Torrent._RatioUseGlobal		= 0;
++Torrent._RatioUseLocal		 = 1;
++Torrent._RatioUnlimited		= 2;
++
++Torrent._ErrNone			   = 0;
++Torrent._ErrTrackerWarning	 = 1;
++Torrent._ErrTrackerError	   = 2;
++Torrent._ErrLocalError		 = 3;
++
++Torrent._TrackerInactive		 = 0;
++Torrent._TrackerWaiting		  = 1;
++Torrent._TrackerQueued		   = 2;
++Torrent._TrackerActive		   = 3;
+ 
+ 
+ Torrent._StaticFields = [ 'hashString', 'id' ]
+@@ -39,24 +39,24 @@
+ 		'isPrivate', 'name', 'totalSize', 'pieceCount', 'pieceSize' ]
+ 
+ Torrent._DynamicFields = [ 'downloadedEver', 'error', 'errorString', 'eta',
+-    'haveUnchecked', 'haveValid', 'leftUntilDone', 'metadataPercentComplete', 'peersConnected',
+-    'peersGettingFromUs', 'peersSendingToUs', 'rateDownload', 'rateUpload',
+-    'recheckProgress', 'sizeWhenDone', 'status', 'trackerStats',
+-    'uploadedEver', 'uploadRatio', 'seedRatioLimit', 'seedRatioMode', 'downloadDir' ]
++	'haveUnchecked', 'haveValid', 'leftUntilDone', 'metadataPercentComplete', 'peersConnected',
++	'peersGettingFromUs', 'peersSendingToUs', 'rateDownload', 'rateUpload',
++	'recheckProgress', 'sizeWhenDone', 'status', 'trackerStats',
++	'uploadedEver', 'uploadRatio', 'seedRatioLimit', 'seedRatioMode', 'downloadDir' ]
+ 
+ Torrent.prototype =
+ {
+ 	initMetaData: function( data ) {
+-		this._date          = data.addedDate;
+-		this._comment       = data.comment;
+-		this._creator       = data.creator;
++		this._date		  = data.addedDate;
++		this._comment	   = data.comment;
++		this._creator	   = data.creator;
+ 		this._creator_date  = data.dateCreated;
+-		this._is_private    = data.isPrivate;
+-		this._name          = data.name;
+-		this._name_lc       = this._name.toLowerCase( );
+-		this._size          = data.totalSize;
+-		this._pieceCount    = data.pieceCount;
+-		this._pieceSize     = data.pieceSize;
++		this._is_private	= data.isPrivate;
++		this._name		  = data.name;
++		this._name_lc	   = this._name.toLowerCase( );
++		this._size		  = data.totalSize;
++		this._pieceCount	= data.pieceCount;
++		this._pieceSize	 = data.pieceSize;
+ 
+ 		if( data.files ) {
+ 			for( var i=0, row; row=data.files[i]; ++i ) {
+@@ -74,12 +74,12 @@
+ 	 * Constructor
+ 	 */
+ 	initialize: function( transferListParent, fileListParent, controller, data) {
+-		this._id            = data.id;
+-		this._hashString    = data.hashString;
++		this._id			= data.id;
++		this._hashString	= data.hashString;
+ 		this._sizeWhenDone  = data.sizeWhenDone;
+ 		this._trackerStats  = this.buildTrackerStats(data.trackerStats);
+-		this._file_model    = [ ];
+-		this._file_view     = [ ];
++		this._file_model	= [ ];
++		this._file_view	 = [ ];
+ 		this.initMetaData( data );
+ 
+ 		// Create a new <li> element
+@@ -88,7 +88,7 @@
+ 		top_e.id = 'torrent_' + data.id;
+ 		top_e._torrent = this;
+ 		var element = $(top_e);
+-                $(element).bind('dblclick', function(e) { transmission.toggleInspector(); });
++				$(element).bind('dblclick', function(e) { transmission.toggleInspector(); });
+ 		element._torrent = this;
+ 		this._element = element;
+ 		this._controller = controller;
+@@ -235,18 +235,18 @@
+ 	},
+ 	getPercentDoneStr: function() {
+ 		return Math.floor(100 * Math.ratio( 100 * ( this._sizeWhenDone - this._leftUntilDone ),
+-		                           this._sizeWhenDone )) / 100;
++								   this._sizeWhenDone )) / 100;
+ 	},
+ 	size: function() { return this._size; },
+ 	state: function() { return this._state; },
+ 	stateStr: function() {
+ 		switch( this.state() ) {
+-			case Torrent._StatusSeeding:        return 'Seeding';
+-			case Torrent._StatusDownloading:    return 'Downloading';
+-			case Torrent._StatusPaused:         return 'Paused';
+-			case Torrent._StatusChecking:       return 'Verifying local data';
+-			case Torrent._StatusWaitingToCheck: return 'Waiting to verify';
+-			default:                            return 'error';
++			case Torrent._StatusSeeding:		return 'Раздача';
++			case Torrent._StatusDownloading:	return 'Закачка';
++			case Torrent._StatusPaused:		 return 'Пауза';
++			case Torrent._StatusChecking:	   return 'Проверка';
++			case Torrent._StatusWaitingToCheck: return 'Ожидание проверки';
++			default:							return 'Ошибка';
+ 		}
+ 	},
+ 	trackerStats: function() { return this._trackerStats; },
+@@ -264,7 +264,7 @@
+ 		switch( this._seed_ratio_mode ) {
+ 			case Torrent._RatioUseGlobal: return this._controller.seedRatioLimit();
+ 			case Torrent._RatioUseLocal:  return this._seed_ratio_limit;
+-			default:                      return -1;
++			default:					  return -1;
+ 		}
+ 	},
+ 	
+@@ -369,27 +369,27 @@
+ 		if( this.needsMetaData() && ( data.metadataPercentComplete >= 1 ) )
+ 			transmission.refreshMetaData( [ this._id ] );
+ 
+-		this._completed               = data.haveUnchecked + data.haveValid;
+-		this._verified                = data.haveValid;
+-		this._leftUntilDone           = data.leftUntilDone;
+-		this._download_total          = data.downloadedEver;
+-		this._upload_total            = data.uploadedEver;
+-		this._upload_ratio            = data.uploadRatio;
+-		this._seed_ratio_limit        = data.seedRatioLimit;
+-		this._seed_ratio_mode         = data.seedRatioMode;
+-		this._download_speed          = data.rateDownload;
+-		this._upload_speed            = data.rateUpload;
+-		this._peers_connected         = data.peersConnected;
+-		this._peers_getting_from_us   = data.peersGettingFromUs;
+-		this._peers_sending_to_us     = data.peersSendingToUs;
+-		this._sizeWhenDone            = data.sizeWhenDone;
+-		this._recheckProgress         = data.recheckProgress;
+-		this._error                   = data.error;
+-		this._error_string            = data.errorString;
+-		this._eta                     = data.eta;
+-		this._trackerStats            = this.buildTrackerStats(data.trackerStats);
+-		this._state                   = data.status;
+-		this._download_dir            = data.downloadDir;
++		this._completed				= data.haveUnchecked + data.haveValid;
++		this._verified				= data.haveValid;
++		this._leftUntilDone			= data.leftUntilDone;
++		this._download_total		= data.downloadedEver;
++		this._upload_total			= data.uploadedEver;
++		this._upload_ratio			= data.uploadRatio;
++		this._seed_ratio_limit		= data.seedRatioLimit;
++		this._seed_ratio_mode		= data.seedRatioMode;
++		this._download_speed		= data.rateDownload;
++		this._upload_speed			= data.rateUpload;
++		this._peers_connected		= data.peersConnected;
++		this._peers_getting_from_us	= data.peersGettingFromUs;
++		this._peers_sending_to_us	= data.peersSendingToUs;
++		this._sizeWhenDone			= data.sizeWhenDone;
++		this._recheckProgress		= data.recheckProgress;
++		this._error					= data.error;
++		this._error_string			= data.errorString;
++		this._eta					= data.eta;
++		this._trackerStats			= this.buildTrackerStats(data.trackerStats);
++		this._state					= data.status;
++		this._download_dir			= data.downloadDir;
+ 		this._metadataPercentComplete = data.metadataPercentComplete;
+ 
+ 		if (data.fileStats)
+@@ -411,11 +411,11 @@
+ 	getErrorMessage: function()
+ 	{
+ 		if( this._error  == Torrent._ErrTrackerWarning )
+-			return 'Tracker returned a warning: ' + this._error_string;
++			return 'Трекер вернул предупреждение: ' + this._error_string;
+ 		if( this._error  == Torrent._ErrTrackerError )
+-			return 'Tracker returned an error: ' + this._error_string;
++			return 'Трекер вернул ошибку: ' + this._error_string;
+ 		if( this._error  == Torrent._ErrLocalError )
+-			return 'Error: ' + this._error_string;
++			return 'Ошибка: ' + this._error_string;
+ 		return null;
+ 	},
+ 
+@@ -436,33 +436,33 @@
+ 
+ 			case Torrent._StatusDownloading:
+ 				// 'Downloading from 36 of 40 peers - DL: 60.2 KB/s UL: 4.3 KB/s'
+-				c = 'Downloading from ';
++				c = 'Обмен с ';
+ 				c += this.peersSendingToUs();
+-				c += ' of ';
++				c += ' из ';
+ 				c += this._peers_connected;
+-				c += ' peers - DL: ';
++				c += ' участников (Приём: ';
+ 				c += Math.formatBytes(this._download_speed);
+-				c += '/s UL: ';
++				c += '/с | Раздача: ';
+ 				c += Math.formatBytes(this._upload_speed);
+-				c += '/s';
++				c += '/c)';
+ 				break;
+ 
+ 			case Torrent._StatusSeeding:
+ 				// 'Seeding to 13 of 22 peers - UL: 36.2 KB/s'
+-				c = 'Seeding to ';
++				c = 'Раздача ';
+ 				c += this.peersGettingFromUs();
+-				c += ' of ';
++				c += ' из ';
+ 				c += this._peers_connected;
+-				c += ' peers - UL: ';
++				c += ' участников (Раздача: ';
+ 				c += Math.formatBytes(this._upload_speed);
+-				c += '/s';
++				c += '/c)';
+ 				break;
+ 
+ 			case Torrent._StatusChecking:
+ 				// 'Verifying local data (40% tested)'
+-				c = 'Verifying local data (';
++				c = 'Проверка локальных данных (';
+ 				c += Math.roundWithPrecision( 100.0 * this._recheckProgress, 0 );
+-				c += '% tested)';
++				c += '% проверено)';
+ 				break;
+ 		}
+ 		return c;
+@@ -487,7 +487,7 @@
+ 
+ 		if( this.needsMetaData() ){
+ 			var metaPercentComplete = this._metadataPercentComplete * 1000 / 100
+-			progress_details = "Magnetized transfer - retrieving metadata (";
++			progress_details = "Магнет-обмен - получение метаинформации(";
+ 			progress_details += metaPercentComplete;
+ 			progress_details += "%)";
+ 
+@@ -510,15 +510,15 @@
+ 			{
+ 				eta = ' - ';
+ 				if (this._eta < 0 || this._eta >= Torrent._InfiniteTimeRemaining )
+-					eta += 'remaining time unknown';
++					eta += '';
+ 				else
+-					eta += Math.formatSeconds(this._eta) + ' remaining';
++					eta += 'Закачка займет ещё около: ' + Math.formatSeconds(this._eta);
+ 			}
+ 			
+ 			// Create the 'progress details' label
+ 			// Eg: '101 MB of 631 MB (16.02%) - 2 hr remaining'
+ 			c = Math.formatBytes( this._sizeWhenDone - this._leftUntilDone );
+-			c += ' of ';
++			c += ' из ';
+ 			c += Math.formatBytes( this._sizeWhenDone );
+ 			c += ' (';
+ 			c += this.getPercentDoneStr();
+@@ -548,9 +548,9 @@
+ 			// Create the 'progress details' label
+ 			// Eg: '698.05 MB, uploaded 8.59 GB (Ratio: 12.3)'
+ 			c = Math.formatBytes( this._size );
+-			c += ', uploaded ';
++			c += ', роздано ';
+ 			c += Math.formatBytes( this._upload_total );
+-			c += ' (Ratio ';
++			c += ' (Рейтинг ';
+ 			c += Math.round(this._upload_ratio*100)/100;
+ 			c += ')';
+ 			progress_details = c;
+@@ -790,6 +790,7 @@
+ 		var pri_div = document.createElement('div');
+ 		pri_div.classNameConst = "file_priority_control";
+ 		pri_div.className = pri_div.classNameConst;
++		pri_div.title = "Приоритет";
+ 
+ 		var file_div = document.createElement('div');
+ 		file_div.className = "inspector_torrent_file_list_entry_name";
+@@ -857,7 +858,7 @@
+ 			var cmd;
+ 			switch( prio ) {
+ 				case  1: cmd = 'priority-high';   break;
+-				case -1: cmd = 'priority-low';    break;
++				case -1: cmd = 'priority-low';	break;
+ 				default: cmd = 'priority-normal'; break;
+ 			}
+ 			this._prio = prio;
+@@ -893,7 +894,7 @@
+ 	
+ 	refreshProgressHTML: function() {
+ 		var c = Math.formatBytes(this._done);
+-		c += ' of ';
++		c += ' из ';
+ 		c += Math.formatBytes(this._size);
+ 		c += ' (';
+ 		c += Math.ratio(100 * this._done, this._size);
+diff -ruN transmission-1.91.orig/web/javascript/transmission.js transmission-1.91/web/javascript/transmission.js
+--- transmission-1.91.orig/web/javascript/transmission.js	2010-02-22 05:42:53.000000000 +0300
++++ transmission-1.91/web/javascript/transmission.js	2010-02-24 17:36:00.000000000 +0300
+@@ -24,9 +24,9 @@
+ 		this.remote = new TransmissionRemote(this);
+ 
+ 		// Initialize the implementation fields
+-		this._current_search         = '';
+-		this._torrents               = { };
+-		this._rows                   = [ ];
++		this._current_search		= '';
++		this._torrents				= { };
++		this._rows					= [ ];
+ 	
+ 		// Initialize the clutch preferences
+ 		Prefs.getClutchPrefs( this );
+@@ -226,11 +226,11 @@
+ 		if (!$.browser.safari)
+ 		{
+ 			search_box.addClass('blur');
+-			search_box[0].value = 'Filter';
++			search_box[0].value = 'поиск';
+ 			search_box.bind('blur', {transmission: this}, function(event) {
+ 				if (this.value == '') {
+ 					$(this).addClass('blur');
+-					this.value = 'Filter';
++					this.value = 'поиск';
+ 					tr.setSearch(null);
+ 				}
+ 			}).bind('focus', {}, function(event) {
+@@ -900,12 +900,12 @@
+ 
+ 		if (!iPhone)
+ 		{
+-			setInnerHTML( $('#limited_download_rate')[0], 'Limit (' + down_limit + ' KB/s)' );
++			setInnerHTML( $('#limited_download_rate')[0], down_limit + ' кБ/с' );
+ 			var key = down_limited ? '#limited_download_rate'
+ 			                       : '#unlimited_download_rate';
+ 			$(key).deselectMenuSiblings().selectMenuItem();
+ 		
+-			setInnerHTML( $('#limited_upload_rate')[0], 'Limit (' + up_limit + ' KB/s)' );
++			setInnerHTML( $('#limited_upload_rate')[0], up_limit + ' кБ/с' );
+ 			key = up_limited ? '#limited_upload_rate'
+ 			                 : '#unlimited_upload_rate';
+ 			$(key).deselectMenuSiblings().selectMenuItem();
+@@ -957,7 +957,7 @@
+ 					$element.deselectMenuSiblings().selectMenuItem();
+ 					args[RPC._DownSpeedLimited] = false;
+ 				} else {
+-					setInnerHTML( $('#limited_download_rate')[0], 'Limit (' + rate + ' KB/s)' );
++					setInnerHTML( $('#limited_download_rate')[0], rate + ' кБ/с' );
+ 					$('#limited_download_rate').deselectMenuSiblings().selectMenuItem();
+ 					$('div.preference input#download_rate')[0].value = rate;
+ 					args[RPC._DownSpeedLimit] = parseInt( rate );
+@@ -975,7 +975,7 @@
+ 					$element.deselectMenuSiblings().selectMenuItem();
+ 					args[RPC._UpSpeedLimited] = false;
+ 				} else {
+-					setInnerHTML( $('#limited_upload_rate')[0], 'Limit (' + rate + ' KB/s)' );
++					setInnerHTML( $('#limited_upload_rate')[0], rate + ' кБ/с' );
+ 					$('#limited_upload_rate').deselectMenuSiblings().selectMenuItem();
+ 					$('div.preference input#upload_rate')[0].value = rate;
+ 					args[RPC._UpSpeedLimit] = parseInt( rate );
+@@ -1036,12 +1036,12 @@
+ 			return;
+ 		}
+ 
+-		var creator = 'N/A';
+-		var comment = 'N/A';
+-		var download_dir = 'N/A';
+-		var date_created = 'N/A';
++		var creator = 'н/д';
++		var comment = 'н/д';
++		var download_dir = 'н/д';
++		var date_created = 'н/д';
+ 		var error = '';
+-		var hash = 'N/A';
++		var hash = 'н/д';
+ 		var have_public = false;
+ 		var have_private = false;
+ 		var name;
+@@ -1054,19 +1054,19 @@
+ 		var total_have = 0;
+ 		var total_size = 0;
+ 		var total_state = null;
+-		var pieces = 'N/A';
++		var pieces = 'н/д';
+ 		var total_upload = 0;
+ 		var total_upload_peers = 0;
+ 		var total_upload_speed = 0;
+ 		var total_verified = 0;
+-		var na = 'N/A';
++		var na = 'н/д';
+ 		var tab = this._inspector._info_tab;
+ 		
+ 		$("#torrent_inspector_size, .inspector_row div").css('color', '#222');
+ 		
+ 		if( torrents.length == 0 )
+ 		{
+-			setInnerHTML( tab.name, 'No Selection' );
++			setInnerHTML( tab.name, 'Ни один торрент не выбран' );
+ 			setInnerHTML( tab.size, na );
+ 			setInnerHTML( tab.pieces, na );
+ 			setInnerHTML( tab.hash, na );
+@@ -1088,13 +1088,13 @@
+ 			setInnerHTML( tab.error, na );
+ 			this.updateVisibleFileLists();
+ 			this.updateTrackersLists();
+-			$("#torrent_inspector_size, .inspector_row > div:contains('N/A')").css('color', '#666');
++			$("#torrent_inspector_size, .inspector_row > div:contains('н/д')").css('color', '#666');
+ 			return;
+ 		}
+ 
+ 		name = torrents.length == 1
+ 			? torrents[0].name()
+-			: torrents.length+' Transfers Selected';
++			:'Торрентов выбрано: '+torrents.length;
+ 
+ 		if( torrents.length == 1 )
+ 		{
+@@ -1110,7 +1110,7 @@
+ 				download_dir = t._download_dir;
+ 
+ 			hash = t.hash();
+-			pieces = t._pieceCount + ', ' + Math.formatBytes(t._pieceSize);
++			pieces = t._pieceCount + ' по ' + Math.formatBytes(t._pieceSize);
+ 			date_created = Math.formatTimestamp( t._creator_date );
+ 		}
+ 
+@@ -1137,21 +1137,21 @@
+ 		}
+ 
+ 		var private_string = '';
+-		if( have_private && have_public ) private_string = 'Mixed';
+-		else if( have_private ) private_string = 'Private Torrent';
+-		else if( have_public ) private_string = 'Public Torrent';	
++		if( have_private && have_public ) private_string = 'Закрытый/Открытый';
++		else if( have_private ) private_string = 'Закрытый';
++		else if( have_public ) private_string = 'Открытый';	
+ 
+ 		setInnerHTML( tab.name, name );
+ 		setInnerHTML( tab.size, torrents.length ? Math.formatBytes( total_size ) : na );
+ 		setInnerHTML( tab.pieces, pieces );
+ 		setInnerHTML( tab.hash, hash );
+ 		setInnerHTML( tab.state, total_state );
+-		setInnerHTML( tab.download_speed, torrents.length ? Math.formatBytes( total_download_speed ) + '/s' : na );
+-		setInnerHTML( tab.upload_speed, torrents.length ? Math.formatBytes( total_upload_speed ) + '/s' : na );
++		setInnerHTML( tab.download_speed, torrents.length ? Math.formatBytes( total_download_speed ) + '/c' : na );
++		setInnerHTML( tab.upload_speed, torrents.length ? Math.formatBytes( total_upload_speed ) + '/c' : na );
+ 		setInnerHTML( tab.uploaded, torrents.length ? Math.formatBytes( total_upload ) : na );
+ 		setInnerHTML( tab.downloaded, torrents.length ? Math.formatBytes( total_download ) : na );
+ 		setInnerHTML( tab.ratio, torrents.length ? Math.ratio( total_upload, total_download ) : na );
+-		setInnerHTML( tab.have, torrents.length ? Math.formatBytes(total_completed) + ' (' + Math.formatBytes(total_verified) + ' verified)' : na );
++		setInnerHTML( tab.have, torrents.length ? Math.formatBytes(total_completed) + ' (' + Math.formatBytes(total_verified) + ' проверено)' : na );
+ 		setInnerHTML( tab.upload_to, torrents.length ? total_upload_peers : na );
+ 		setInnerHTML( tab.download_from, torrents.length ? total_download_peers : na );
+ 		setInnerHTML( tab.secure, private_string );
+@@ -1163,7 +1163,7 @@
+ 		setInnerHTML( tab.error, error );
+ 		
+ 		this.updateTrackersLists();
+-		$(".inspector_row > div:contains('N/A')").css('color', '#666');
++		$(".inspector_row > div:contains('н/д')").css('color', '#666');
+ 		this.updateVisibleFileLists();
+ 	},
+ 
+@@ -1192,12 +1192,12 @@
+ 		// turn this into a DOM tree, this is a fast operation.
+ 		var tr = this;
+ 		var html = '';
+-		var na = 'N/A';
++		var na = 'н/д';
+ 		var torrents = this.getSelectedTorrents( );
+ 		if( $(this._inspector_trackers_list).is(':visible') && torrents.length == 1 ) {
+ 			for( var i=0, tier; tier=torrents[0]._trackerStats[i]; ++i ) {
+ 				html += '<div class="inspector_group"><div class="inspector_group_label">';
+-				html += 'Tier ' + (i + 1) + '</div><ul class="tier_list">';
++				html += 'Уровень ' + (i + 1) + '</div><ul class="tier_list">';
+ 				for( var j=0, tracker; tracker=tier[j]; ++j ) {
+ 					var lastAnnounceStatusHash = tr.lastAnnounceStatus(tracker);
+ 					var announceState = tr.announceState(tracker);
+@@ -1212,9 +1212,9 @@
+ 					html += '<div>' + announceState + '</div>';
+ 					html += '<div>' + lastScrapeStatusHash['label'] + ': ' + lastScrapeStatusHash['value'] + '</div>';
+ 					html += '</div><table class="tracker_stats">';
+-					html += '<tr><th>Seeders:</th><td>' + (tracker.seederCount > -1 ? tracker.seederCount : na) + '</td></tr>';
+-					html += '<tr><th>Leechers:</th><td>' + (tracker.leecherCount > -1 ? tracker.leecherCount : na) + '</td></tr>';
+-					html += '<tr><th>Downloads:</th><td>' + (tracker.downloadCount > -1 ? tracker.downloadCount : na)+ '</td></tr>';
++					html += '<tr><th>Сиды:</th><td>' + (tracker.seederCount > -1 ? tracker.seederCount : na) + '</td></tr>';
++					html += '<tr><th>Личеры:</th><td>' + (tracker.leecherCount > -1 ? tracker.leecherCount : na) + '</td></tr>';
++					html += '<tr><th>Скачан:</th><td>' + (tracker.downloadCount > -1 ? tracker.downloadCount : na)+ '</td></tr>';
+ 					html += '</table></li>';
+ 				}
+ 				html += '</ul></div>';
+@@ -1224,17 +1224,17 @@
+ 	},
+ 
+ 	lastAnnounceStatus: function(tracker){
+-		var lastAnnounceLabel = 'Last Announce';
+-		var lastAnnounce = 'N/A';
++		var lastAnnounceLabel = 'Последний анонс';
++		var lastAnnounce = 'н/д';
+ 		if (tracker.hasAnnounced) {
+ 			var lastAnnounceTime = Math.formatTimestamp(tracker.lastAnnounceTime);
+ 			if (tracker.lastAnnounceSucceeded) {
+ 				lastAnnounce = lastAnnounceTime;
+-				lastAnnounce += ' (got ' + tracker.lastAnnouncePeerCount + ' peer';
+-				if (tracker.lastAnnouncePeerCount != 1){ lastAnnounce += 's'; }
++				lastAnnounce += ' (получено пиров: ' + tracker.lastAnnouncePeerCount;
++				//if (tracker.lastAnnouncePeerCount != 1){ lastAnnounce += 's'; }
+ 				lastAnnounce += ')';
+ 			} else {
+-				lastAnnounceLabel = 'Announce error';
++				lastAnnounceLabel = 'Ошибка анонса';
+ 				lastAnnounce = (tracker.lastAnnounceResult ? tracker.lastAnnounceResult + ' - ' : '') + lastAnnounceTime;
+ 			}
+ 		}
+@@ -1245,38 +1245,38 @@
+ 		var announceState = '';
+ 		switch (tracker.announceState) {
+ 			case Torrent._TrackerActive:
+-				announceState = 'Announce in progress';
++				announceState = 'Анонс...';
+ 				break;
+ 			case Torrent._TrackerWaiting:
+ 				var timeUntilAnnounce = tracker.nextAnnounceTime - ((new Date()).getTime() / 1000);
+ 				if(timeUntilAnnounce < 0){
+ 					timeUntilAnnounce = 0;
+ 				}
+-				announceState = 'Next announce in ' + Math.formatSeconds(timeUntilAnnounce);
++				announceState = 'Следующий анонс через ' + Math.formatSeconds(timeUntilAnnounce);
+ 				break;
+ 			case Torrent._TrackerQueued:
+-				announceState = 'Announce is queued';
++				announceState = 'Анонс в очереди';
+ 				break;
+ 			case Torrent._TrackerInactive:
+ 				announceState = tracker.isBackup ?
+-					'Tracker will be used as a backup' :
+-					'Announce not scheduled';
++					'Трекер будет резервным' :
++					'Анонс не запланирован';
+ 				break;
+ 			default:
+-				announceState = 'unknown announce state: ' + tracker.announceState;
++				announceState = 'неизвестное состояние анонса ' + tracker.announceState;
+ 		}
+ 		return announceState;
+ 	},
+ 
+ 	lastScrapeStatus: function(tracker){
+-		var lastScrapeLabel = 'Last Scrape';
+-		var lastScrape = 'N/A';
++		var lastScrapeLabel = 'Последний запрос статистики';
++		var lastScrape = 'н/д';
+ 		if (tracker.hasScraped) {
+ 			var lastScrapeTime = Math.formatTimestamp(tracker.lastScrapeTime);
+ 			if (tracker.lastScrapeSucceeded) {
+ 				lastScrape = lastScrapeTime;
+ 			} else {
+-				lastScrapeLabel = 'Scrape error';
++				lastScrapeLabel = 'Ошибка запроса статистики';
+ 				lastScrape = (tracker.lastScrapeResult ? tracker.lastScrapeResult + ' - ' : '') + lastScrapeTime;
+ 			}
+ 		}
+@@ -1305,7 +1305,7 @@
+ 			$('#torrent_container')[0].style.right = w;
+ 		}
+ 
+-		setInnerHTML( $('ul li#context_toggle_inspector')[0], 'Hide Inspector' );
++		setInnerHTML( $('ul li#context_toggle_inspector')[0], 'Скрыть панель "Инспектор"' );
+ 
+ 		this.setPref( Prefs._ShowInspector, true );
+ 		this.updateInspector( );
+@@ -1326,7 +1326,7 @@
+ 		} else {
+ 			$('#torrent_filter_bar')[0].style.right = '0px';
+ 			$('#torrent_container')[0].style.right = '0px';
+-			setInnerHTML( $('ul li#context_toggle_inspector')[0], 'Show Inspector' );
++			setInnerHTML( $('ul li#context_toggle_inspector')[0], 'Показать панель "Инспектор"' );
+ 		}
+ 		
+ 		this.setPref( Prefs._ShowInspector, false );
+@@ -1347,6 +1347,8 @@
+ 		$('#torrent_container').css('top', container_top + 'px');
+ 		$('#torrent_filter_bar').show();
+ 		this.setPref( Prefs._ShowFilter, true );
++		this.setupSearchBox();
++		this._current_search		= [];
+ 	},
+ 	
+ 	hideFilter: function()
+@@ -1356,6 +1358,8 @@
+ 		$('#torrent_filter_bar').hide();
+ 		this.setPref( Prefs._ShowFilter, false );
+ 		this.setFilter( Prefs._FilterAll );
++		this.setSearch(null);
++		$('#torrent_search')[0].value = '';
+ 	},
+ 
+ 	refreshMetaData: function(ids) {
+@@ -1510,19 +1514,19 @@
+ 		// update torrent count label
+ 		var s;
+ 		if( torrentCount == visibleCount )
+-			s = torrentCount + ' Transfers';
++			s ='Торрентов: '+torrentCount;
+ 		else
+-			s = visibleCount + ' of ' + torrentCount + ' Transfers';
++			s = 'Торрентов: '+visibleCount + ' из ' + torrentCount;
+ 		setInnerHTML( $('#torrent_global_transfer')[0], s );
+ 		
+ 		// update the speeds
+-		s = Math.formatBytes( upSpeed ) + '/s';
+-		if( iPhone ) s = 'UL: ' + s;
++		s = Math.formatBytes( upSpeed ) + '/c';
++		if( iPhone ) s = 'Раздача: ' + s;
+ 		setInnerHTML( $('#torrent_global_upload')[0], s );
+ 		
+ 		// download speeds
+-		s = Math.formatBytes( downSpeed ) + '/s';
+-		if( iPhone ) s = 'DL: ' + s;
++		s = Math.formatBytes( downSpeed ) + '/c';
++		if( iPhone ) s = 'Закачка: ' + s;
+ 		setInnerHTML( $('#torrent_global_download')[0], s );
+ 	},
+ 
+@@ -1582,15 +1586,15 @@
+ 		if( torrents.length == 1 )
+ 		{
+ 			var torrent = torrents[0];
+-			var header = 'Remove ' + torrent.name() + '?';
+-			var message = 'Once removed, continuing the transfer will require the torrent file. Are you sure you want to remove it?';
+-			dialog.confirm( header, message, 'Remove', 'transmission.removeTorrents', torrents );
++			var header = 'Удалить выбранный торрент?';
++			var message = 'Выбранный торрент-файл будет удален.';
++			dialog.confirm( header, message, 'Удалить', 'transmission.removeTorrents', torrents );
+ 		}
+ 		else
+ 		{
+-			var header = 'Remove ' + torrents.length + ' transfers?';
+-			var message = 'Once removed, continuing the transfers will require the torrent files. Are you sure you want to remove them?';
+-			dialog.confirm( header, message, 'Remove', 'transmission.removeTorrents', torrents );
++			var header = 'Удалить выбранные торренты?'; 
++			var message = 'Выбранные торрент-файлы будут удалены.';
++			dialog.confirm( header, message, 'Удалить', 'transmission.removeTorrents', torrents );
+ 		}
+ 	},
+ 
+@@ -1599,15 +1603,16 @@
+ 		if( torrents.length == 1 )
+ 		{
+ 			var torrent = torrents[0],
+-				header = 'Remove ' + torrent.name() + ' and delete data?',
+-				message = 'All data downloaded for this torrent will be deleted. Are you sure you want to remove it?';
+-			dialog.confirm( header, message, 'Remove', 'transmission.removeTorrentsAndData', torrents );
++				header = 'Удалить выбранный торрент вместе со всеми закаченными данными?',
++				//+ torrent.name() +
++				message = 'Все файлы, относящиеся к выбранному торренту, будут удалены';
++			dialog.confirm( header, message, 'Удалить', 'transmission.removeTorrentsAndData', torrents );
+ 		}
+ 		else
+ 		{
+-			var header = 'Remove ' + torrents.length + ' transfers and delete data?',
+-				message = 'All data downloaded for these torrents will be deleted. Are you sure you want to remove them?';
+-			dialog.confirm( header, message, 'Remove', 'transmission.removeTorrentsAndData', torrents );
++			var header = 'Удалить выбранные торренты вместе со всеми закаченными данными?',
++				message = 'Все файлы, относящиеся к выбранным торрентам, будут удалены';
++			dialog.confirm( header, message, 'Удалить', 'transmission.removeTorrentsAndData', torrents );
+ 		}
+ 	},
+ 
+diff -ruN transmission-1.91.orig/web/javascript/transmission.remote.js transmission-1.91/web/javascript/transmission.remote.js
+--- transmission-1.91.orig/web/javascript/transmission.remote.js	2010-02-22 05:42:53.000000000 +0300
++++ transmission-1.91/web/javascript/transmission.remote.js	2009-09-28 04:10:00.000000000 +0400
+@@ -65,14 +65,14 @@
+ 					? request.responseText.trim().replace(/(<([^>]+)>)/ig,"")
+ 					: "";
+ 		if( !remote._error.length )
+-			remote._error = 'Server not responding';
++			remote._error = 'Связь с сервером прервалась.';
+ 		
+-		dialog.confirm('Connection Failed',
+-			'Could not connect to the server. You may need to reload the page to reconnect.',
+-			'Details',
++		dialog.confirm('Связь с сервером прервалась',
++			'Пожалуйста, обновите страницу в браузере, чтобы восстановить подключение.',
++			'Подробнее',
+ 			'alert(remote._error);',
+ 			null,
+-			'Dismiss');
++			'Отклонить');
+ 		remote._controller.togglePeriodicRefresh(false);
+ 		remote._controller.togglePeriodicSessionRefresh(false);
+ 	},
+@@ -112,9 +112,7 @@
+ 		var o = {
+ 			method: 'torrent-get',
+ 			arguments: {
+-			fields: Torrent._StaticFields.concat( Torrent._MetaDataFields,
+-                                                              Torrent._DynamicFields,
+-                                                              [ 'files', 'fileStats' ] )
++			fields: Torrent._StaticFields.concat( Torrent._MetaDataFields, Torrent._DynamicFields, ['files', 'fileStats'])
+ 			}
+ 		};
+ 
+@@ -128,8 +126,7 @@
+ 		var o = {
+ 			method: 'torrent-get',
+ 			arguments: {
+-			fields: Torrent._StaticFields.concat( Torrent._MetaDataFields,
+-                                                              [ 'files', 'fileStats' ] )
++			fields: Torrent._StaticFields.concat( Torrent._MetaDataFields,['files', 'fileStats'])
+ 			}
+ 		};
+ 
+diff -ruN transmission-1.91.orig/web/stylesheets/common.css transmission-1.91/web/stylesheets/common.css
+--- transmission-1.91.orig/web/stylesheets/common.css	2010-02-22 05:42:53.000000000 +0300
++++ transmission-1.91/web/stylesheets/common.css	2010-02-24 18:12:00.000000000 +0300
+@@ -313,7 +313,8 @@
+ 	height: 15px;
+ 	width: 100px;
+ 	border: solid 0 #fff;
+-	padding: 0 2px;
++	--background: #FFF url('../images/graphics/filter_icon.png') top left no-repeat;
++	padding: 0 2px 0 00px;
+ 	margin: 4px 5px 0 0;
+ }
+ /* Safari-look filter input for Firefox */
+@@ -333,8 +334,12 @@
+ 
+ div#torrent_filter_bar input#torrent_search.blur {
+ 	color: #999;
++	background: #FFF url('../images/graphics/filter_icon.png') top left no-repeat;
++	padding: 0 2px 0 20px;
++	width: 80px;
+ }
+ 
++
+ /*--------------------------------------
+  *
+  * T O R R E N T   C O N T A I N E R
+@@ -535,6 +540,7 @@
+ div#torrent_inspector #torrent_inspector_name {
+ 	margin: 0;
+ 	overflow: hidden;
++	font-size:1.8em;
+ }
+ div#torrent_inspector #torrent_inspector_size {
+ 	font-size: 1.2em;
+@@ -827,8 +833,9 @@
+ 
+ div.torrent_footer div#turtle_button {
+ 	height: 22px;
++	float: left;
+ 	width: 32px !important;
+-	margin: 0 0 0 38px;
++	margin: 0 0 0 5px;
+ 	padding: 0;
+ 	-moz-user-select: none;
+ 	-webkit-user-select: none;
+@@ -923,7 +930,7 @@
+ 	padding: 5px;
+ 	background-color: #EEE;
+ 	border: 1px solid #787878;
+-	width: 50px;
++	width: 80px;
+ 	height: 15px;
+ 	text-align: center;
+ 	font-weight: bold;
+@@ -990,6 +997,7 @@
+ div#prefs_container label.category {
+ 	clear: both;
+ 	font-size: 1.2em;
++	font-weight: bold;
+ }
+ 
+ div#prefs_container label.item {

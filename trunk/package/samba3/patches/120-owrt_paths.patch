@@ -1,0 +1,54 @@
+Index: samba-3.0.24/source/Makefile
+===================================================================
+--- samba-3.0.24.orig/source/Makefile	2009-05-06 11:06:24.000000000 +0200
++++ samba-3.0.24/source/Makefile	2009-05-06 11:10:50.000000000 +0200
+@@ -14,7 +14,7 @@
+ 
+ # AR7
+ # prefix=/usr/local/samba
+-prefix=/var/samba
++prefix=
+ exec_prefix=${prefix}
+ 
+ # AR7
+@@ -105,12 +105,12 @@
+ # These can be overridden by command line switches (see smbd(8))
+ # or in smb.conf (see smb.conf(5))
+ LOGFILEBASE = ${VARDIR}
+-CONFIGFILE = $(CONFIGDIR)/smb.conf
+-LMHOSTSFILE = $(CONFIGDIR)/lmhosts
++CONFIGFILE = /etc/samba/smb.conf
++LMHOSTSFILE = /etc/lmhosts
+ 
+ # This is where smbpasswd et al go
+ # not for freetz: PRIVATEDIR = ${prefix}/private
+-PRIVATEDIR = /mod/etc
++PRIVATEDIR = /etc/samba/
+ 
+ SMB_PASSWD_FILE = $(PRIVATEDIR)/smbpasswd
+ PRIVATE_DIR = $(PRIVATEDIR)
+@@ -119,7 +119,7 @@
+ SWATDIR = ${prefix}/swat
+ 
+ # the directory where lock files go
+-LOCKDIR = /var/locks
++LOCKDIR = /var/lock
+ 
+ # the directory where pid files go
+ PIDDIR = /var/run
+Index: samba-3.0.24/source/lib/util.c
+===================================================================
+--- samba-3.0.24.orig/source/lib/util.c	2009-05-06 11:03:46.000000000 +0200
++++ samba-3.0.24/source/lib/util.c	2009-05-06 11:08:09.000000000 +0200
+@@ -300,11 +300,7 @@
+ 	char *p;
+ 	if ((p = getenv("TMPDIR")))
+ 		return p;
+-#if 1 /* AR7 */
+-	return "/var/tmp";
+-#else
+ 	return "/tmp";
+-#endif
+ }
+ 
+ /****************************************************************************

@@ -1,0 +1,1035 @@
+diff -ruN samba-3.0.24.orig/source/lib/system.c samba-3.0.24/source/lib/system.c
+--- samba-3.0.24.orig/source/lib/system.c	2006-04-20 06:29:23.000000000 +0400
++++ samba-3.0.24/source/lib/system.c	2009-05-26 00:33:00.000000000 +0400
+@@ -918,28 +918,83 @@
+ 	endpwent();
+ }
+ 
++/*
++ Virtual User & Group Hack.
++*/
++struct passwd *getpwnam_null(const char *name)
++{
++    static struct passwd pw;
++
++    if(!name)
++       return NULL;
++
++    pw.pw_name   = "root";
++    pw.pw_passwd = "";
++    pw.pw_uid    = 0;
++    pw.pw_gid    = 0;
++    pw.pw_gecos  = "";
++    pw.pw_dir    = "/var";
++    pw.pw_shell  = "/bin/sh";
++
++    return &pw;
++}
++
++struct passwd *getpwuid_null(uid_t uid)
++{
++    if(uid >= 0)
++	return getpwnam_null("root");
++    else
++	return NULL;
++}
++
++struct group *getgrnam_null(const char *name)
++{
++    static struct group gr;
++
++    if(!name)
++       return NULL;
++    
++    gr.gr_name   = "root";
++    gr.gr_passwd = "x";
++    gr.gr_gid    = 0;
++    gr.gr_mem[0] = 0;
++    
++    return &gr;
++}
++
++struct group *getgrgid_null(gid_t gid)
++{
++    if(gid >= 0)
++	return getgrnam_null("root");
++    else
++	return NULL;
++}
++/*
++ End.
++*/
++
+ /**************************************************************************
+  Wrappers for getpwnam(), getpwuid(), getgrnam(), getgrgid()
+ ****************************************************************************/
+ 
+ struct passwd *sys_getpwnam(const char *name)
+ {
+-	return getpwnam(name);
++	return getpwnam_null(name);
+ }
+ 
+ struct passwd *sys_getpwuid(uid_t uid)
+ {
+-	return getpwuid(uid);
++	return getpwuid_null(uid);
+ }
+ 
+ struct group *sys_getgrnam(const char *name)
+ {
+-	return getgrnam(name);
++	return getgrnam_null(name);
+ }
+ 
+ struct group *sys_getgrgid(gid_t gid)
+ {
+-	return getgrgid(gid);
++	return getgrgid_null(gid);
+ }
+ 
+ #if 0 /* NOT CURRENTLY USED - JRA */
+diff -ruN samba-3.0.24.orig/source/Makefile samba-3.0.24/source/Makefile
+--- samba-3.0.24.orig/source/Makefile	2009-05-26 00:38:45.000000000 +0400
++++ samba-3.0.24/source/Makefile	2009-05-25 23:57:44.000000000 +0400
+@@ -82,19 +82,19 @@
+ 
+ # AR7
+ # BASEDIR= /usr/local/samba
+-BASEDIR= /var/samba
++BASEDIR= /var
+ BINDIR = ${exec_prefix}/bin
+ # sbindir is mapped to bindir when compiling SAMBA in 2.0.x compatibility mode.
+ SBINDIR = ${exec_prefix}/sbin
+-LIBDIR = /mod/etc
++LIBDIR = /usr/lib/samba
+ VFSLIBDIR = $(LIBDIR)/vfs
+ PDBLIBDIR = $(LIBDIR)/pdb
+ RPCLIBDIR = $(LIBDIR)/rpc
+ IDMAPLIBDIR = $(LIBDIR)/idmap
+ CHARSETLIBDIR = $(LIBDIR)/charset
+ AUTHLIBDIR = $(LIBDIR)/auth
+-CONFIGDIR = ${LIBDIR}
+-VARDIR = /var/samba
++CONFIGDIR = /tmp
++VARDIR = /var
+ MANDIR = ${prefix}/man
+ DATADIR = ${prefix}/share
+ 
+@@ -105,12 +105,12 @@
+ # These can be overridden by command line switches (see smbd(8))
+ # or in smb.conf (see smb.conf(5))
+ LOGFILEBASE = ${VARDIR}
+-CONFIGFILE = /etc/samba/smb.conf
+-LMHOSTSFILE = /etc/lmhosts
++CONFIGFILE = /tmp/smb.conf
++LMHOSTSFILE = /var/lmhosts
+ 
+ # This is where smbpasswd et al go
+ # not for freetz: PRIVATEDIR = ${prefix}/private
+-PRIVATEDIR = /etc/samba/
++PRIVATEDIR = /tmp
+ 
+ SMB_PASSWD_FILE = $(PRIVATEDIR)/smbpasswd
+ PRIVATE_DIR = $(PRIVATEDIR)
+@@ -408,7 +408,6 @@
+ 
+ PASSDB_OBJ = $(PASSDB_GET_SET_OBJ) passdb/passdb.o passdb/pdb_interface.o \
+ 		passdb/pdb_compat.o \
+-		passdb/lookup_sid.o \
+ 		passdb/login_cache.o  passdb/pdb_smbpasswd.o passdb/pdb_tdb.o \
+ 		lib/system_smbd.o \
+ 		passdb/lookup_sid.o passdb/util_builtin.o \
+@@ -537,6 +536,8 @@
+ NMBD_OBJ = $(NMBD_OBJ1) $(PARAM_OBJ) $(LIBSMB_OBJ) $(KRBCLIENT_OBJ) \
+            $(PROFILE_OBJ) $(LIB_NONSMBD_OBJ) $(SECRETS_OBJ) $(POPT_LIB_OBJ) 
+ 
++NMBD_OBJ_BASE = $(NMBD_OBJ1) libads/kerberos.o lib/dummysmbd.o lib/dummyroot.o $(POPT_LIB_OBJ)
++
+ WREPL_OBJ1 =
+ 
+ WREPL_OBJ = $(WREPL_OBJ1)  $(PARAM_OBJ) $(UBIQX_OBJ) \
+@@ -943,7 +944,6 @@
+ 	$(AR) cru bin/libsmbd.a $(SMBD_OBJ_BASE)
+ 	$(RANLIB) bin/libsmbd.a
+ 
+-
+ bin/nmbd: bin/libsmbd.a $(NMBD_OBJ) bin/.dummy
+ 	@echo Linking $@
+ 	@$(CC) $(FLAGS)  -o $@ $(NMBD_OBJ) $(LDFLAGS) $(DYNEXP) \
+@@ -951,6 +951,24 @@
+ 		-L$(TARGETFS)/lib \
+ 		$(LIBS)
+ 
++bin/smbd.shared: bin/libsmb.so $(SMBD_OBJ_MAIN) bin/.dummy
++	@echo Linking $@
++	$(CC) $(FLAGS)  -o $@ $(SMBD_OBJ_MAIN) $(LDFLAGS) \
++		$(AUTH_LIBS) \
++		-Lbin -lsmb \
++		-L$(TARGETFS)/lib \
++		$(LIBS)
++
++bin/nmbd.shared: bin/libsmb.so $(NMBD_OBJ_BASE) bin/.dummy
++	@echo Linking $@
++	@$(CC) $(FLAGS)  -o $@ $(NMBD_OBJ_BASE) nmbd/server_wrap.c $(LDFLAGS) \
++		-Lbin -lsmb \
++		-L$(TARGETFS)/lib \
++		$(LIBS)
++
++bin/libsmb.so: $(SMBD_OBJ_BASE)
++	$(SHLD) $(LDSHFLAGS) -o $@ $(SMBD_OBJ_BASE) $(LDFLAGS) $(LIBS)
++
+ bin/swat: $(SWAT_OBJ) $(POPT_OBJS) bin/.dummy
+ 	@echo Linking $@
+ 	@$(CC) $(FLAGS)  -o $@ $(SWAT_OBJ) $(LDFLAGS) $(DYNEXP) $(PRINT_LIBS) \
+diff -ruN samba-3.0.24.orig/source/nmbd/server_wrap.c samba-3.0.24/source/nmbd/server_wrap.c
+--- samba-3.0.24.orig/source/nmbd/server_wrap.c	1970-01-01 03:00:00.000000000 +0300
++++ samba-3.0.24/source/nmbd/server_wrap.c	2009-05-25 18:49:53.000000000 +0400
+@@ -0,0 +1,764 @@
++/* 
++   Unix SMB/CIFS implementation.
++   Main SMB server routines
++   Copyright (C) Andrew Tridgell		1992-1998
++   Copyright (C) Martin Pool			2002
++   Copyright (C) Jelmer Vernooij		2002-2003
++   
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++   
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++   
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++*/
++
++#include "includes.h"
++
++/* AR7 ???? static_decl_rpc; */
++
++static int am_parent = 1;
++
++/* the last message the was processed */
++int last_message = -1;
++
++/* a useful macro to debug the last message processed */
++#define LAST_MESSAGE() smb_fn_name(last_message)
++
++extern struct auth_context *negprot_global_auth_context;
++extern pstring user_socket_options;
++extern SIG_ATOMIC_T got_sig_term;
++extern SIG_ATOMIC_T reload_after_sighup;
++
++#ifdef WITH_DFS
++extern int dcelogin_atmost_once;
++#endif /* WITH_DFS */
++
++
++
++#ifdef SAMBA_DEBUG
++void _fLog(char *fmt, ...)
++{
++	va_list va;
++	FILE *fp = fopen("/var/log/smbd.log", "a");
++	time_t t = time(0); /* LOG */
++
++	if (!fp) return;
++
++	fprintf(fp, " [%d] %02u:%02u  ", getpid(), (t / 60) % 60, t % 60);
++	va_start(va, fmt);
++	vfprintf(fp, fmt, va);
++	va_end(va);
++	fprintf(fp, "\n");
++	fclose(fp);
++}
++
++void _fDebug(char *fmt, ...)
++{
++	va_list va;
++	FILE *fp = fopen("/var/log/smbd.log", "a");
++	time_t t = time(0); /* LOG */
++
++	if (!fp) return;
++
++	fprintf(fp, " [%d] %02u:%02u ", getpid(), (t / 60) % 60, t % 60);
++	va_start(va, fmt);
++	vfprintf(fp, fmt, va);
++	va_end(va);
++	fclose(fp);
++}
++#endif
++
++/* really we should have a top level context structure that has the
++   client file descriptor as an element. That would require a major rewrite :(
++
++   the following 2 functions are an alternative - they make the file
++   descriptor private to smbd
++ */
++static int server_fd = -1;
++
++int smbd_server_fd(void)
++{
++	return server_fd;
++}
++
++static void smbd_set_server_fd(int fd)
++{
++	server_fd = fd;
++	client_setfd(fd);
++}
++
++/*******************************************************************
++ What to do when smb.conf is updated.
++ ********************************************************************/
++
++static void smb_conf_updated(int msg_type, struct process_id src,
++			     void *buf, size_t len)
++{
++	DEBUG(10,("smb_conf_updated: Got message saying smb.conf was updated. Reloading.\n"));
++	reload_services(False);
++}
++
++
++/****************************************************************************
++ Terminate signal.
++****************************************************************************/
++
++static void sig_term(void)
++{
++	got_sig_term = 1;
++	sys_select_signal(SIGTERM);
++}
++
++/****************************************************************************
++ Catch a sighup.
++****************************************************************************/
++
++static void sig_hup(int sig)
++{
++	reload_after_sighup = 1;
++	sys_select_signal(SIGHUP);
++}
++
++/****************************************************************************
++  Send a SIGTERM to our process group.
++*****************************************************************************/
++
++static void  killkids(void)
++{
++	if(am_parent) kill(0,SIGTERM);
++}
++
++/****************************************************************************
++ Process a sam sync message - not sure whether to do this here or
++ somewhere else.
++****************************************************************************/
++
++static void msg_sam_sync(int UNUSED(msg_type), struct process_id UNUSED(pid),
++			 void *UNUSED(buf), size_t UNUSED(len))
++{
++        DEBUG(10, ("** sam sync message received, ignoring\n"));
++}
++
++/****************************************************************************
++ Process a sam sync replicate message - not sure whether to do this here or
++ somewhere else.
++****************************************************************************/
++
++static void msg_sam_repl(int msg_type, struct process_id pid,
++			 void *buf, size_t len)
++{
++        uint32 low_serial;
++
++        if (len != sizeof(uint32))
++                return;
++
++        low_serial = *((uint32 *)buf);
++
++        DEBUG(3, ("received sam replication message, serial = 0x%04x\n",
++                  low_serial));
++}
++
++/****************************************************************************
++ Open the socket communication - inetd.
++****************************************************************************/
++
++static BOOL open_sockets_inetd(void)
++{
++	/* Started from inetd. fd 0 is the socket. */
++	/* We will abort gracefully when the client or remote system 
++	   goes away */
++	smbd_set_server_fd(dup(0));
++	
++	/* close our standard file descriptors */
++	close_low_fds(False); /* Don't close stderr */
++	
++	set_socket_options(smbd_server_fd(),"SO_KEEPALIVE");
++	set_socket_options(smbd_server_fd(), user_socket_options);
++
++	return True;
++}
++
++static void msg_exit_server(int msg_type, struct process_id src,
++			    void *buf, size_t len)
++{
++	DEBUG(3, ("got a SHUTDOWN message\n"));
++	exit_server_cleanly(NULL);
++}
++
++#ifdef DEVELOPER
++static void msg_inject_fault(int msg_type, struct process_id src,
++			    void *buf, size_t len)
++{
++	int sig;
++
++	if (len != sizeof(int)) {
++		
++		DEBUG(0, ("Process %llu sent bogus signal injection request\n",
++			(unsigned long long)src.pid));
++		return;
++	}
++
++	sig = *(int *)buf;
++	if (sig == -1) {
++		exit_server("internal error injected");
++		return;
++	}
++
++#if HAVE_STRSIGNAL
++	DEBUG(0, ("Process %llu requested injection of signal %d (%s)\n",
++		    (unsigned long long)src.pid, sig, strsignal(sig)));
++#else
++	DEBUG(0, ("Process %llu requested injection of signal %d\n",
++		    (unsigned long long)src.pid, sig));
++#endif
++
++	kill(sys_getpid(), sig);
++}
++#endif /* DEVELOPER */
++
++
++/****************************************************************************
++ Have we reached the process limit ?
++****************************************************************************/
++
++static BOOL allowable_number_of_smbd_processes(void)
++{
++	int max_processes = lp_max_smbd_processes();
++
++	if (!max_processes)
++		return True;
++
++	{
++		TDB_CONTEXT *tdb = conn_tdb_ctx();
++		int32 val;
++		if (!tdb) {
++			DEBUG(0,("allowable_number_of_smbd_processes: can't open connection tdb.\n" ));
++			return False;
++		}
++
++		val = tdb_fetch_int32(tdb, "INFO/total_smbds");
++		if (val == -1 && (tdb_error(tdb) != TDB_ERR_NOEXIST)) {
++			DEBUG(0,("allowable_number_of_smbd_processes: can't fetch INFO/total_smbds. Error %s\n",
++				tdb_errorstr(tdb) ));
++			return False;
++		}
++		if (val > max_processes) {
++			DEBUG(0,("allowable_number_of_smbd_processes: number of processes (%d) is over allowed limit (%d)\n",
++				val, max_processes ));
++			return False;
++		}
++	}
++	return True;
++}
++
++/****************************************************************************
++ Open the socket communication.
++****************************************************************************/
++
++static BOOL open_sockets_smbd(BOOL is_daemon, BOOL interactive, const char *smb_ports)
++{
++	int num_interfaces = iface_count();
++	int num_sockets = 0;
++	int fd_listenset[FD_SETSIZE];
++	fd_set listen_set;
++	int s;
++	int maxfd = 0;
++	int i;
++	char *ports;
++
++	if (!is_daemon) {
++		return open_sockets_inetd();
++	}
++
++		
++#ifdef HAVE_ATEXIT
++	{
++		static int atexit_set;
++		if(atexit_set == 0) {
++			atexit_set=1;
++			atexit(killkids);
++		}
++	}
++#endif
++
++	/* Stop zombies */
++	CatchChild();
++				
++	FD_ZERO(&listen_set);
++
++	/* use a reasonable default set of ports - listing on 445 and 139 */
++	if (!smb_ports) {
++		ports = lp_smb_ports();
++		if (!ports || !*ports) {
++			ports = smb_xstrdup(SMB_PORTS);
++		} else {
++			ports = smb_xstrdup(ports);
++		}
++	} else {
++		ports = smb_xstrdup(smb_ports);
++	}
++
++	if (lp_interfaces() && lp_bind_interfaces_only()) {
++		/* We have been given an interfaces line, and been 
++		   told to only bind to those interfaces. Create a
++		   socket per interface and bind to only these.
++		*/
++		
++		/* Now open a listen socket for each of the
++		   interfaces. */
++		for(i = 0; i < num_interfaces; i++) {
++			struct in_addr *ifip = iface_n_ip(i);
++			fstring tok;
++			const char *ptr;
++
++			if(ifip == NULL) {
++				DEBUG(0,("open_sockets_smbd: interface %d has NULL IP address !\n", i));
++				continue;
++			}
++
++			for (ptr=ports; next_token(&ptr, tok, " \t,", sizeof(tok)); ) {
++				unsigned port = atoi(tok);
++				if (port == 0) {
++					continue;
++				}
++				s = fd_listenset[num_sockets] = open_socket_in(SOCK_STREAM, port, 0, ifip->s_addr, True);
++				if(s == -1)
++					return False;
++
++				/* ready to listen */
++				set_socket_options(s,"SO_KEEPALIVE"); 
++				set_socket_options(s,user_socket_options);
++     
++				/* Set server socket to non-blocking for the accept. */
++				set_blocking(s,False); 
++ 
++				if (listen(s, SMBD_LISTEN_BACKLOG) == -1) {
++					DEBUG(0,("listen: %s\n",strerror(errno)));
++					close(s);
++					return False;
++				}
++				FD_SET(s,&listen_set);
++				maxfd = MAX( maxfd, s);
++
++				num_sockets++;
++				if (num_sockets >= FD_SETSIZE) {
++					DEBUG(0,("open_sockets_smbd: Too many sockets to bind to\n"));
++					return False;
++				}
++			}
++		}
++	} else {
++		/* Just bind to 0.0.0.0 - accept connections
++		   from anywhere. */
++
++		fstring tok;
++		const char *ptr;
++
++		num_interfaces = 1;
++		
++		for (ptr=ports; next_token(&ptr, tok, " \t,", sizeof(tok)); ) {
++			unsigned port = atoi(tok);
++			if (port == 0) continue;
++			/* open an incoming socket */
++			s = open_socket_in(SOCK_STREAM, port, 0,
++					   interpret_addr(lp_socket_address()),True);
++			if (s == -1)
++				return(False);
++		
++			/* ready to listen */
++			set_socket_options(s,"SO_KEEPALIVE"); 
++			set_socket_options(s,user_socket_options);
++			
++			/* Set server socket to non-blocking for the accept. */
++			set_blocking(s,False); 
++ 
++			if (listen(s, SMBD_LISTEN_BACKLOG) == -1) {
++				DEBUG(0,("open_sockets_smbd: listen: %s\n",
++					 strerror(errno)));
++				close(s);
++				return False;
++			}
++
++			fd_listenset[num_sockets] = s;
++			FD_SET(s,&listen_set);
++			maxfd = MAX( maxfd, s);
++
++			num_sockets++;
++
++			if (num_sockets >= FD_SETSIZE) {
++				DEBUG(0,("open_sockets_smbd: Too many sockets to bind to\n"));
++				return False;
++			}
++		}
++	} 
++
++	SAFE_FREE(ports);
++
++        /* Listen to messages */
++
++        message_register(MSG_SMB_SAM_SYNC, msg_sam_sync);
++        message_register(MSG_SMB_SAM_REPL, msg_sam_repl);
++        message_register(MSG_SHUTDOWN, msg_exit_server);
++        message_register(MSG_SMB_FILE_RENAME, msg_file_was_renamed);
++	message_register(MSG_SMB_CONF_UPDATED, smb_conf_updated); 
++
++#ifdef DEVELOPER
++	message_register(MSG_SMB_INJECT_FAULT, msg_inject_fault); 
++#endif
++
++	/* now accept incoming connections - forking a new process
++	   for each incoming connection */
++	DEBUG(2,("waiting for a connection\n"));
++	while (1) {
++		fd_set lfds;
++		int num;
++		
++		/* Free up temporary memory from the main smbd. */
++		lp_TALLOC_FREE();
++
++		/* Ensure we respond to PING and DEBUG messages from the main smbd. */
++		message_dispatch();
++
++		memcpy((char *)&lfds, (char *)&listen_set, 
++		       sizeof(listen_set));
++		
++		num = sys_select(maxfd+1,&lfds,NULL,NULL,NULL);
++		
++		if (num == -1 && errno == EINTR) {
++			if (got_sig_term) {
++				exit_server_cleanly(NULL);
++			}
++
++			/* check for sighup processing */
++			if (reload_after_sighup) {
++				change_to_root_user();
++				DEBUG(1,("Reloading services after SIGHUP\n"));
++				reload_services(False);
++				reload_after_sighup = 0;
++			}
++
++			continue;
++		}
++		
++		/* check if we need to reload services */
++		check_reload(time(NULL));
++
++		/* Find the sockets that are read-ready -
++		   accept on these. */
++		for( ; num > 0; num--) {
++			struct sockaddr addr;
++			socklen_t in_addrlen = sizeof(addr);
++
++			s = -1;
++			for(i = 0; i < num_sockets; i++) {
++				if(FD_ISSET(fd_listenset[i],&lfds)) {
++					s = fd_listenset[i];
++					/* Clear this so we don't look
++					   at it again. */
++					FD_CLR(fd_listenset[i],&lfds);
++					break;
++				}
++			}
++
++			smbd_set_server_fd(accept(s,&addr,&in_addrlen));
++			
++			if (smbd_server_fd() == -1 && errno == EINTR)
++				continue;
++			
++			if (smbd_server_fd() == -1) {
++				DEBUG(0,("open_sockets_smbd: accept: %s\n",
++					 strerror(errno)));
++				continue;
++			}
++
++			/* Ensure child is set to blocking mode */
++			set_blocking(smbd_server_fd(),True);
++
++			if (smbd_server_fd() != -1 && interactive)
++				return True;
++			
++			if (allowable_number_of_smbd_processes() && smbd_server_fd() != -1 && sys_fork()==0) {
++				/* Child code ... */
++				
++				/* close the listening socket(s) */
++				for(i = 0; i < num_sockets; i++)
++					close(fd_listenset[i]);
++				
++				/* close our standard file
++				   descriptors */
++				close_low_fds(False);
++				am_parent = 0;
++				
++				set_socket_options(smbd_server_fd(),"SO_KEEPALIVE");
++				set_socket_options(smbd_server_fd(),user_socket_options);
++				
++				/* this is needed so that we get decent entries
++				   in smbstatus for port 445 connects */
++				set_remote_machine_name(get_peer_addr(smbd_server_fd()), False);
++				
++				/* Reset the state of the random
++				 * number generation system, so
++				 * children do not get the same random
++				 * numbers as each other */
++
++				set_need_random_reseed();
++				/* tdb needs special fork handling - remove CLEAR_IF_FIRST flags */
++				if (tdb_reopen_all(1) == -1) {
++					DEBUG(0,("tdb_reopen_all failed.\n"));
++					smb_panic("tdb_reopen_all failed.");
++				}
++
++				return True; 
++			}
++			/* The parent doesn't need this socket */
++			close(smbd_server_fd()); 
++
++			/* Sun May 6 18:56:14 2001 ackley@cs.unm.edu:
++				Clear the closed fd info out of server_fd --
++				and more importantly, out of client_fd in
++				util_sock.c, to avoid a possible
++				getpeername failure if we reopen the logs
++				and use %I in the filename.
++			*/
++
++			smbd_set_server_fd(-1);
++
++			/* Force parent to check log size after
++			 * spawning child.  Fix from
++			 * klausr@ITAP.Physik.Uni-Stuttgart.De.  The
++			 * parent smbd will log to logserver.smb.  It
++			 * writes only two messages for each child
++			 * started/finished. But each child writes,
++			 * say, 50 messages also in logserver.smb,
++			 * begining with the debug_count of the
++			 * parent, before the child opens its own log
++			 * file logserver.client. In a worst case
++			 * scenario the size of logserver.smb would be
++			 * checked after about 50*50=2500 messages
++			 * (ca. 100kb).
++			 * */
++			force_check_log_size();
++ 
++		} /* end for num */
++	} /* end while 1 */
++
++/* NOTREACHED	return True; */
++}
++
++/****************************************************************************
++ Reload printers
++**************************************************************************/
++void reload_printers(void)
++{
++#ifndef AVM_NO_PRINTING
++	int snum;
++	int n_services = lp_numservices();
++	int pnum = lp_servicenumber(PRINTERS_NAME);
++	const char *pname;
++
++	pcap_cache_reload();
++
++	/* remove stale printers */
++	for (snum = 0; snum < n_services; snum++) {
++		/* avoid removing PRINTERS_NAME or non-autoloaded printers */
++		if (snum == pnum || !(lp_snum_ok(snum) && lp_print_ok(snum) &&
++		                      lp_autoloaded(snum)))
++			continue;
++
++		pname = lp_printername(snum);
++		if (!pcap_printername_ok(pname)) {
++			DEBUG(3, ("removing stale printer %s\n", pname));
++
++			if (is_printer_published(NULL, snum, NULL))
++				nt_printer_publish(NULL, snum, SPOOL_DS_UNPUBLISH);
++			del_a_printer(pname);
++			lp_killservice(snum);
++		}
++	}
++
++	load_printers();
++#endif /* AVM_NO_PRINTING */
++}
++
++/****************************************************************************
++ Reload the services file.
++**************************************************************************/
++
++BOOL reload_services(BOOL test)
++{
++	BOOL ret;
++	
++	if (lp_loaded()) {
++		pstring fname;
++		pstrcpy(fname,lp_configfile());
++		if (file_exist(fname, NULL) &&
++		    !strcsequal(fname, dyn_CONFIGFILE)) {
++			pstrcpy(dyn_CONFIGFILE, fname);
++			test = False;
++		}
++	}
++
++	reopen_logs();
++
++	if (test && !lp_file_list_changed())
++		return(True);
++
++	lp_killunused(conn_snum_used);
++
++	ret = lp_load(dyn_CONFIGFILE, False, False, True, True);
++
++	reload_printers();
++
++	/* perhaps the config filename is now set */
++	if (!test)
++		reload_services(True);
++
++	reopen_logs();
++
++	load_interfaces();
++
++	if (smbd_server_fd() != -1) {      
++		set_socket_options(smbd_server_fd(),"SO_KEEPALIVE");
++		set_socket_options(smbd_server_fd(), user_socket_options);
++	}
++
++	mangle_reset_cache();
++	reset_stat_cache();
++
++	/* this forces service parameters to be flushed */
++	set_current_service(NULL,0,True);
++
++	return(ret);
++}
++
++/****************************************************************************
++ Exit the server.
++****************************************************************************/
++
++/* Reasons for shutting down a server process. */
++enum server_exit_reason { SERVER_EXIT_NORMAL, SERVER_EXIT_ABNORMAL };
++
++static void exit_server_common(enum server_exit_reason how,
++	const char *const reason) NORETURN_ATTRIBUTE;
++
++static void exit_server_common(enum server_exit_reason how,
++	const char *const reason)
++{
++	static int firsttime=1;
++
++	if (!firsttime)
++		exit(0);
++	firsttime = 0;
++
++	change_to_root_user();
++
++	if (negprot_global_auth_context) {
++		(negprot_global_auth_context->free)(&negprot_global_auth_context);
++	}
++
++	conn_close_all();
++
++	invalidate_all_vuids();
++
++#ifndef AVM_NO_PRINTING
++	print_notify_send_messages(3); /* 3 second timeout. */
++#endif
++
++	/* delete our entry in the connections database. */
++	yield_connection(NULL,"");
++
++	respond_to_all_remaining_local_messages();
++	decrement_smbd_process_count();
++
++#ifdef WITH_DFS
++	if (dcelogin_atmost_once) {
++		dfs_unlogin();
++	}
++#endif
++
++	locking_end();
++#ifndef AVM_NO_PRINTING
++	printing_end();
++#endif
++
++	if (how != SERVER_EXIT_NORMAL) {
++		int oldlevel = DEBUGLEVEL;
++		char *last_inbuf = get_InBuffer();
++
++		DEBUGLEVEL = 10;
++
++		DEBUGSEP(0);
++		DEBUG(0,("Abnormal server exit: %s\n",
++			reason ? reason : "no explanation provided"));
++		DEBUGSEP(0);
++
++		log_stack_trace();
++		if (last_inbuf) {
++			DEBUG(0,("Last message was %s\n", LAST_MESSAGE()));
++			show_msg(last_inbuf);
++		}
++
++		DEBUGLEVEL = oldlevel;
++#if DUMP_CORE
++		dump_core();
++#endif
++
++	} else {    
++		DEBUG(3,("Server exit (%s)\n",
++			(reason ? reason : "normal exit")));
++	}
++
++	exit(0);
++}
++
++void exit_server(const char *const explanation)
++{
++	exit_server_common(SERVER_EXIT_ABNORMAL, explanation);
++}
++
++void exit_server_cleanly(const char *const explanation)
++{
++	exit_server_common(SERVER_EXIT_NORMAL, explanation);
++}
++
++void exit_server_fault(void)
++{
++	exit_server("critical server fault");
++}
++
++/****************************************************************************
++ Initialise connect, service and file structs.
++****************************************************************************/
++
++static BOOL init_structs(void )
++{
++	/*
++	 * Set the machine NETBIOS name if not already
++	 * set from the config file.
++	 */
++
++	if (!init_names())
++		return False;
++
++	conn_init();
++
++	file_init();
++
++	/* for RPC pipes */
++	init_rpc_pipe_hnd();
++
++	init_dptrs();
++
++	secrets_init();
++
++	return True;
++}
++
+diff -ruN samba-3.0.24.orig/source/utils/owrt_smbpasswd.c samba-3.0.24/source/utils/owrt_smbpasswd.c
+--- samba-3.0.24.orig/source/utils/owrt_smbpasswd.c	2009-05-26 00:38:45.000000000 +0400
++++ samba-3.0.24/source/utils/owrt_smbpasswd.c	2009-05-26 00:03:57.000000000 +0400
+@@ -39,6 +39,7 @@
+ 	ZERO_STRUCT(wpwd);
+ }
+ 
++#if 0
+ /* returns -1 if user is not present in /etc/passwd*/
+ int find_uid_for_user(char *user)
+ {
+@@ -82,6 +83,7 @@
+ 		fclose(fp);
+ 	return ret;
+ }
++#endif
+ 
+ void insert_user_in_smbpasswd(char *user, char *line)
+ {
+@@ -178,7 +180,11 @@
+ 		delete_user_from_smbpasswd(argv[2]);
+ 		return 0;
+ 	}
++#if 0
+ 	uid = find_uid_for_user(argv[1]);
++#else
++	uid = 0;
++#endif
+ 	if(uid == -1)
+ 		exit(2);
+ 
+diff -ruN samba-3.0.24.orig/source/smbd/share_access.c samba-3.0.24/source/smbd/share_access.c
+--- samba-3.0.24.orig/source/smbd/share_access.c	2007-02-04 21:59:13.000000000 +0300
++++ samba-3.0.24/source/smbd/share_access.c	2009-05-28 00:29:47.000000000 +0400
+@@ -72,7 +72,12 @@
+ 	const char *prefix;
+ 	DOM_SID sid;
+ 	enum SID_NAME_USE type;
++	BOOL virtuser = False;
+ 
++	/* Check for virtual users */
++	if (username && name && !strcmp(username, name))
++	    virtuser = True;
++	
+ 	if (username != NULL) {
+ 		name = talloc_sub_basic(mem_ctx, username, name);
+ 	}
+@@ -104,7 +109,9 @@
+ 				  name, sid_type_lookup(type)));
+ 			return False;
+ 		}
+-		return nt_token_check_sid(&sid, token);
++		/* Check for virtual users */
++		return virtuser;
++		/* return nt_token_check_sid(&sid, token); */
+ 	}
+ 
+ 	for (/* initialized above */ ; *prefix != '\0'; prefix++) {
+diff -ruN samba-3.0.24.orig/source/smbd/uid.c samba-3.0.24/source/smbd/uid.c
+--- samba-3.0.24.orig/source/smbd/uid.c	2009-05-27 03:58:12.000000000 +0400
++++ samba-3.0.24/source/smbd/uid.c	2009-05-27 17:40:16.000000000 +0400
+@@ -97,10 +97,10 @@
+ 		}
+ 	}
+ 
+-	if (!user_ok_token(vuser->user.unix_name, vuser->nt_user_token, snum))
++	if (!user_ok_token(vuser->user.smb_name, vuser->nt_user_token, snum))
+ 		return(False);
+ 
+-	readonly_share = is_share_read_only_for_token(vuser->user.unix_name,
++	readonly_share = is_share_read_only_for_token(vuser->user.smb_name,
+ 						      vuser->nt_user_token,
+ 						      conn->service);
+ 
+@@ -128,7 +128,7 @@
+ 	ent->read_only = readonly_share;
+ 
+ 	ent->admin_user = token_contains_name_in_list(
+-		vuser->user.unix_name, NULL, vuser->nt_user_token,
++		vuser->user.smb_name, NULL, vuser->nt_user_token,
+ 		lp_admin_users(conn->service));
+ 
+ 	conn->read_only = ent->read_only;

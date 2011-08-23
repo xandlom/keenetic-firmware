@@ -1,0 +1,12 @@
+diff -U 3 -dHBbrN -- busybox-1.15.1.orig/networking/udhcp/dhcpd.c busybox-1.15.1/networking/udhcp/dhcpd.c
+--- busybox-1.15.1.orig/networking/udhcp/dhcpd.c	2011-02-19 00:08:21.000000000 +0300
++++ busybox-1.15.1/networking/udhcp/dhcpd.c	2011-02-19 00:08:49.000000000 +0300
+@@ -144,7 +144,7 @@
+ 
+ 		switch (udhcp_sp_read(&rfds)) {
+ 		case SIGUSR1:
+-			bb_info_msg("Received a SIGUSR1");
++			//bb_info_msg("Received a SIGUSR1");
+ 			write_leases();
+ 			/* why not just reset the timeout, eh */
+ 			timeout_end = monotonic_sec() + server_config.auto_time;

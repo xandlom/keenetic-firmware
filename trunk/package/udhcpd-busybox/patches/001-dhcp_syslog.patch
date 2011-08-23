@@ -1,0 +1,19 @@
+diff -ruN busybox-1.15.1.orig/networking/udhcp/Config.in busybox-1.15.1/networking/udhcp/Config.in
+--- busybox-1.15.1.orig/networking/udhcp/Config.in	2009-10-01 18:20:34.000000000 +0400
++++ busybox-1.15.1/networking/udhcp/Config.in	2009-10-01 18:18:43.000000000 +0400
+@@ -5,6 +5,7 @@
+ 
+ config APP_UDHCPD
+ 	bool "udhcp server (udhcpd)"
++	select FEATURE_SYSLOG
+ 	default n
+ 	help
+ 	  udhcpd is a DHCP server geared primarily toward embedded systems,
+@@ -48,6 +49,7 @@
+ 
+ config APP_UDHCPC
+ 	bool "udhcp client (udhcpc)"
++	select FEATURE_SYSLOG
+ 	default n
+ 	help
+ 	  udhcpc is a DHCP client geared primarily toward embedded systems,

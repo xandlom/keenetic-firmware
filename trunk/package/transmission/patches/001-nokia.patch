@@ -1,0 +1,12 @@
+diff -ruN transmission-1.75.orig/web/javascript/common.js transmission-1.75/web/javascript/common.js
+--- transmission-1.75.orig/web/javascript/common.js	2009-09-14 07:52:25.000000000 +0400
++++ transmission-1.75/web/javascript/common.js	2009-10-24 20:27:57.000000000 +0400
+@@ -17,7 +17,7 @@
+ 
+ function testSafari3()
+ {
+-    var minimum = new Array(521,0);
++    var minimum = new Array(412,0);
+     var webKitFields = RegExp("( AppleWebKit/)([^ ]+)").exec(navigator.userAgent);
+     if (!webKitFields || webKitFields.length < 3) return false;
+     var version = webKitFields[2].split(".");

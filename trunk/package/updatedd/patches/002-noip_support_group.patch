@@ -1,0 +1,92 @@
+diff -ruN updatedd-2.6.orig/src/plugins/libnoip.c updatedd-2.6/src/plugins/libnoip.c
+--- updatedd-2.6.orig/src/plugins/libnoip.c	2006-09-08 00:32:59.000000000 +0400
++++ updatedd-2.6/src/plugins/libnoip.c	2008-10-23 10:54:07.000000000 +0400
+@@ -46,7 +46,7 @@
+ 		      "passing the login information directly.\n\n"
+ 		      "Options:\n"
+ 		      "   -4    --ipv4 <address>        ip address version 4\n"
+-/*                       "   -g    --group                 use group instead of HOSTNAME\n" */
++                      "   -g    --group                 use group instead of HOSTNAME\n"
+ 		      "         --help                  print help and exit\n"
+ 		      "         --version               display version information and exit\n\n"
+ 		      "Report bugs to <"EMAIL">.\n\n");
+@@ -107,11 +107,7 @@
+ 	} else {
+ 		ret = update_dyndns(s, &args);
+ 		if(ret == RET_OK) {
+-                        if(args.hostname) {
+-                                ret = check_server_msg(s, args.hostname);
+-                        } else {
+-                                ret = check_server_msg(s, args.group);
+-                        }
++                        ret = check_server_msg(s, args.hostname);
+ 		}
+ 		(void)close(s);
+ 	}
+@@ -126,6 +122,7 @@
+ 
+ 	int c;
+ 	char **ptr = &args->hostname;
++	args->group = 0;
+ 
+ 	for(;;) {
+ 
+@@ -133,12 +130,12 @@
+ 		static struct option long_options[] = {
+ 			{ "ipv4",		1, 0, '4' },
+ 			{ "help",		0, 0, 'h' },
+-/* 			{ "group",		0, 0, 'g' }, */
++ 			{ "group",		0, 0, 'g' },
+ 			{ "version",		0, 0, 'v' },
+ 			{ NULL,			0, 0, 0   }
+ 		};
+ 
+-		c = getopt_long(argc, argv, "4:",
++		c = getopt_long(argc, argv, "g4:",
+ 				long_options, &option_index);
+ 
+ 		if(c == -1) break;
+@@ -147,9 +144,9 @@
+ 		case '4':
+ 			args->ipv4 = optarg;
+ 			break;
+-/* 		case 'g': */
+-/* 			ptr = &args->group; */
+-/* 			break; */
++  		case 'g':
++ 			args->group = 1;
++ 			break;
+ 		case 'h':
+ 			print_usage(argv[ARGV_PNAME], stdout);
+ 			exit(EXIT_SUCCESS);
+@@ -215,12 +212,14 @@
+ 		(void)strncat(message, args->ipv4, BUFFREE(message));
+ 	}
+ 
+-	if(args->hostname) {
++	if(args->group && args->hostname) {
++		print_debug("using group....\n");
++		(void)strncat(message, "&groupname=", BUFFREE(message));
++		(void)strncat(message, args->hostname, BUFFREE(message));
++	} else if(args->hostname) {
++		print_debug("using hostname....\n");
+ 		(void)strncat(message, "&host=", BUFFREE(message));
+ 		(void)strncat(message, args->hostname, BUFFREE(message));
+-/*	} else if(args->group) {                                       *
+- *		(void)strncat(message, "&group=", BUFFREE(message));   *
+- *		(void)strncat(message, args->group, BUFFREE(message)); */
+ 	} else {
+ 		ret_msg(NONE, "wrong usage");
+ 		return RET_WRONG_USAGE;
+diff -ruN updatedd-2.6.orig/src/plugins/libnoip.h updatedd-2.6/src/plugins/libnoip.h
+--- updatedd-2.6.orig/src/plugins/libnoip.h	2006-09-08 00:32:59.000000000 +0400
++++ updatedd-2.6/src/plugins/libnoip.h	2008-10-23 10:41:21.000000000 +0400
+@@ -36,7 +36,7 @@
+ 
+ struct arguments {
+ 	char *hostname;
+-	char *group;
++	char group;
+ 	char *ipv4;
+ 	char *login;
+ };

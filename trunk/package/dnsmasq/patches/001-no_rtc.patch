@@ -1,0 +1,11 @@
+--- dnsmasq-2.55/src/config.h.orig	2011-01-21 01:49:22.000000000 +0300
++++ dnsmasq-2.55/src/config.h	2011-01-28 01:19:36.000000000 +0300
+@@ -169,7 +169,7 @@
+ #define HAVE_DHCP
+ #define HAVE_TFTP
+ #define HAVE_SCRIPT
+-/* #define HAVE_BROKEN_RTC */
++#define HAVE_BROKEN_RTC
+ /* #define HAVE_DBUS */
+ 
+ /* Allow TFTP to be disabled with COPTS=-DNO_TFTP */

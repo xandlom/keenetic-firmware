@@ -1,0 +1,198 @@
+diff -ruN updatedd-2.6.orig/include/ipcache.h updatedd-2.6/include/ipcache.h
+--- updatedd-2.6.orig/include/ipcache.h	1970-01-01 03:00:00.000000000 +0300
++++ updatedd-2.6/include/ipcache.h	2008-10-30 13:12:58.000000000 +0300
+@@ -0,0 +1,92 @@
++/*
++ * ipcache.h
++ */
++ 
++#ifndef IPCACHE_H
++#define IPCACHE_H
++#include <sys/ioctl.h>
++#include <net/if.h>
++
++#define MAXLENG 16
++
++static inline void save_ipcache(char *ipaddr, char *cache_file)
++{
++	FILE *outfile;  
++	if((outfile = fopen(cache_file,"w")) == NULL) {
++		/* print_debug("can't write to cache file: %s\n", cache_file); */
++    		return;
++	}
++	fputs(ipaddr, outfile);
++	fclose(outfile);
++}
++
++static inline int check_ipcache(char *set_ipaddr, char *cache_file)
++{
++	int fd, res = 0;
++	struct ifconf ifc;
++	struct ifreq ibuf[MAXLENG], ifr, *ifrp, *ifend;
++	struct sockaddr_in sa;
++	char ipaddr[MAXLENG];
++	FILE *infile;
++
++	memset(ipaddr, 0, sizeof(ipaddr));
++
++	if((infile = fopen(cache_file,"r")) == NULL)
++    		return 0;
++	else 
++    		fgets(ipaddr, MAXLENG, infile);
++
++    	fclose(infile);
++
++    	if(!ipaddr) 
++		return 0;
++
++	if(set_ipaddr) {
++		if(!strncmp(set_ipaddr, ipaddr, sizeof(ipaddr)))
++			return 1;
++		else
++			return 0;
++	}
++	
++	if((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
++		return 0;
++
++	memset(ibuf, 0, sizeof(struct ifreq)*MAXLENG);
++	ifc.ifc_len = sizeof(ibuf);
++	ifc.ifc_buf = (caddr_t)ibuf;
++
++	/* get interfaces list */
++	if(ioctl(fd, SIOCGIFCONF, (char*)&ifc) == -1 || ifc.ifc_len < sizeof(struct ifreq)) {
++		close(fd);
++		return 0;
++	}
++
++	ifrp = ibuf;
++	ifend = (struct ifreq*)((char*)ibuf + ifc.ifc_len);
++
++	for(; ifrp < ifend; ifrp++) {
++	
++		strncpy(ifr.ifr_name, ifrp->ifr_name, sizeof(ifr.ifr_name));
++
++		if (ioctl(fd, SIOCGIFFLAGS, (char*)&ifr) == -1)
++			continue;
++
++		if(!(ifr.ifr_flags & IFF_UP))
++			continue;
++
++		/* get ip address */
++		if(ioctl(fd, SIOCGIFADDR, (char*)&ifr) == -1)
++			continue;
++		
++		memcpy(&sa, &ifr.ifr_addr, sizeof(struct sockaddr_in));
++		/* print_debug("%s: %s =? %s\n", ifr.ifr_name, inet_ntoa(sa.sin_addr), ipaddr); */
++		if(!strncmp(ipaddr, inet_ntoa(sa.sin_addr), sizeof(ipaddr))) {
++			res = 1;
++			break;
++		}
++	}
++	close(fd);
++	return res;
++}
++
++#endif /* IPCACHE_H */
+diff -ruN updatedd-2.6.orig/src/plugins/libdyndns.h updatedd-2.6/src/plugins/libdyndns.h
+--- updatedd-2.6.orig/src/plugins/libdyndns.h	2006-09-08 00:32:59.000000000 +0400
++++ updatedd-2.6/src/plugins/libdyndns.h	2008-10-30 12:54:51.000000000 +0300
+@@ -43,6 +43,7 @@
+ 	const char *system;
+ 	char *login;
+ 	const char *wildcard;
++	char force_update;
+ };
+ 
+ static struct yesno {
+diff -ruN updatedd-2.6.orig/src/plugins/libdyndns.c updatedd-2.6/src/plugins/libdyndns.c
+--- updatedd-2.6.orig/src/plugins/libdyndns.c	2006-09-08 00:32:59.000000000 +0400
++++ updatedd-2.6/src/plugins/libdyndns.c	2008-10-30 13:02:24.000000000 +0300
+@@ -33,9 +33,12 @@
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
+ #include <version.h>
++#include <ipcache.h>
+ 
+ #include "libdyndns.h"
+ 
++#define IPCACHE_DYNDNS "/var/tmp/dyndns.ipcache"
++
+ static void
+ print_usage(char *pname, FILE *fp)
+ {
+@@ -53,6 +56,7 @@
+ 		      "   -s    --system <system>       specify the system\n"
+ 		      "                                 (dyndns [default], statdns, custom)\n"
+ 		      "   -w    --wildcard <on|off>     switch wildcard on or off\n"
++		      "   -f    --force                 force update\n"
+ 		      "         --help                  print help and exit\n"
+ 		      "         --version               display version information and exit\n\n"
+ 		      "Report bugs to <"EMAIL">.\n\n");
+@@ -105,7 +109,12 @@
+ 	if(get_flags(&args, argc, argv) != RET_OK) {
+ 		return RET_WRONG_USAGE;
+ 	}
+-        
++
++        if(check_ipcache(args.ipv4, (char *)IPCACHE_DYNDNS) && !args.force_update) {
++		ret_msg(NONE, "%s: No updates, ip address has not changed.\n", args.hostname);
++		return RET_OK;
++	}
++
+ 	s = get_connection(DYNDNSHOST, PORT, &ptr);
+ 	if(s == -1) {
+ 		ret_msg(HERR, "%s: %s", ptr, DYNDNSHOST);
+@@ -145,6 +154,7 @@
+ 	char buf[BUFSIZE];
+ 
+ 	args->backmx = yn.no;
++	args->force_update = 0;
+ 	args->wildcard = "NOCHG";
+ 	args->offline = yn.no;
+ 	args->system = dd_system[0];
+@@ -161,10 +171,11 @@
+ 			{ "wildcard",		1, 0, 'w' },
+ 			{ "with-backmx",	0, 0, 'b' },
+ 			{ "version",		0, 0, 'v' },
++			{ "force",		0, 0, 'f' },
+ 			{ NULL,			0, 0, 0   }
+ 		};
+                 
+-		c = getopt_long(argc, argv, "4:bm:os:w:",
++		c = getopt_long(argc, argv, "4:fbm:os:w:",
+ 				long_options, &option_index);
+                 
+ 		if(c == -1) break;
+@@ -176,6 +187,9 @@
+ 		case 'b':
+ 			args->backmx = yn.yes;
+ 			break;
++		case 'f':
++			args->force_update = 1;
++			break;
+ 		case 'h':
+ 			print_usage(argv[ARGV_PNAME], stdout);
+ 			exit(EXIT_SUCCESS);
+@@ -310,7 +324,7 @@
+ {
+         
+ 	int n;
+-	char server_msg[BUFSIZE], *ptr;
++	char server_msg[BUFSIZE], *ptr, *myip = NULL;
+         
+ 	/* get server_msg */
+ 	(void)memset(server_msg, 0, sizeof(server_msg));
+@@ -333,6 +347,12 @@
+ 				if(strstr(ptr, return_codes[n].code)) {
+ 					ret_msg(NONE, "%s: %s",
+ 						hostname, return_codes[n].message);
++					/* print_debug("n = %d, ptr = %s\n", n, ptr); */
++					if(n == 3) {
++					    (void)strtok(ptr, " ");
++					    if((myip = strtok(NULL, " ")))
++						    save_ipcache(myip, (char *)IPCACHE_DYNDNS);
++					}
+ 					if(return_codes[n].error == 1) {
+ 						return RET_ERROR;
+ 					} else {

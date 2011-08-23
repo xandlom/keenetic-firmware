@@ -1,0 +1,386 @@
+diff -U 3 -dHBbrN -- ntfs-3g-2010.1.16.orig/src/ntfs-3g.c ntfs-3g-2010.1.16/src/ntfs-3g.c
+--- ntfs-3g-2010.1.16.orig/src/ntfs-3g.c	2010-01-15 19:18:21.000000000 +0300
++++ ntfs-3g-2010.1.16/src/ntfs-3g.c	2010-03-13 10:51:57.557300289 +0300
+@@ -520,6 +520,8 @@
+ }
+ #endif /* defined(FUSE_CAP_DONT_MASK) || (defined(__APPLE__) || defined(__DARWIN__)) */
+ 
++void free_iobj_name(const char *pname);
++
+ static int ntfs_fuse_getattr(const char *org_path, struct stat *stbuf)
+ {
+ 	int res = 0;
+@@ -531,6 +533,8 @@
+ 	BOOL withusermapping;
+ 	struct SECURITY_CONTEXT security;
+ 
++	free_iobj_name(org_path);
++
+ 	stream_name_len = ntfs_fuse_parse_path(org_path, &path, &stream_name);
+ 	if (stream_name_len < 0)
+ 		return stream_name_len;
+@@ -994,101 +998,257 @@
+ 	return res;
+ }
+ 
++#define UPDATE_ATIME	0x1
++#define UPDATE_MTIME	0x2
++#define IOBJ_CSIZE	0x20000
++#define IOBJS_MAX		10
++
++
++typedef struct _stiobj {
++	struct _stiobj *pnext;
++	struct _stiobj *pprev;
++	char cname[4096];
++	ntfs_inode *ni;
++	ntfs_attr *na;
++	int iattr;
++	int icache;
++	char ccache[IOBJ_CSIZE];
++	off_t offset;
++	size_t size;
++} IOBJ, *PIOBJ;
++
++static PIOBJ pihead = NULL;
++static PIOBJ pitail = NULL;
++static int iobjs	  = 0;
++
++static inline PIOBJ find_iobj(const char *pname) {
++	PIOBJ piobj;
++	
++	piobj = pihead;
++	while( piobj ) 
++		if( !strcmp(piobj->cname, pname) ) return piobj;
++		else piobj = piobj->pnext;
++		
++	return NULL;
++}
++
++static inline void free_iobj(PIOBJ piobj) {
++	if( piobj->iattr & UPDATE_MTIME ) {
++		ntfs_fuse_update_times(piobj->na->ni, NTFS_UPDATE_MCTIME);
++		set_archive(piobj->ni);
++	}
++	if( piobj->iattr & UPDATE_ATIME ) ntfs_fuse_update_times(piobj->na->ni, NTFS_UPDATE_ATIME);
++	if( piobj->na ) ntfs_attr_close(piobj->na);
++	if( piobj->ni ) ntfs_inode_close(piobj->ni);
++
++	if( !piobj->pprev	) pihead = piobj->pnext;
++	else piobj->pprev->pnext = piobj->pnext;
++	if( !piobj->pnext ) pitail = piobj->pprev;
++	else piobj->pnext->pprev = piobj->pprev;		
++		
++	free(piobj);
++	iobjs--;
++}
++
++static inline int flush_iobj_buf(PIOBJ piobj) {
++	int iboff, iresult;
++	s64 ret;
++
++	iresult = 0;
++	if( piobj->icache ) {
++		iboff = 0;
++		while( piobj->size ) {
++			if( (ret = ntfs_attr_pwrite(piobj->na, piobj->offset, piobj->size, &piobj->ccache[iboff])) <= 0 ) {
++				iresult = -errno;
++				break;
++			}
++			piobj->size   -= ret;
++			piobj->offset += ret;
++			iboff  += ret;
++		}
++		piobj->icache = 0;
++		if( !iresult ) iresult = iboff;
++	}
++	return iresult;
++}
++
++void free_iobj_name(const char *pname) {
++	PIOBJ piobj, pitemp;
++	
++	if( pname ) {
++		if( (piobj = find_iobj(pname)) ) {
++			flush_iobj_buf(piobj);
++			free_iobj(piobj);
++		}
++	} else {
++		piobj = pihead;
++		while( (pitemp = piobj) ) {
++			piobj = piobj->pnext;
++			flush_iobj_buf(pitemp);
++			free_iobj(pitemp);
++		}
++	}
++}
++
++
++static inline PIOBJ get_iobj(const char *pname, int iattr) {
++	PIOBJ piobj;
++	char *path;
++	ntfschar *stream_name;
++	int stream_name_len;
++	
++	if( (piobj = find_iobj(pname)) ) {
++		piobj->iattr |= iattr;
++		return piobj;
++	}
++	
++	if( iobjs > IOBJS_MAX ) {
++		flush_iobj_buf(pihead);
++		free_iobj(pihead);
++	}
++	
++	if( !(piobj = (PIOBJ)malloc(sizeof(IOBJ))) ) return NULL;
++	piobj->pnext = NULL;
++	piobj->pprev = NULL;
++	piobj->ni = 0;
++	piobj->na = 0;
++	piobj->iattr = iattr;
++	piobj->icache = 0;
++	
++	strncpy(piobj->cname, pname, sizeof(piobj->cname) - 1);
++	piobj->cname[sizeof(piobj->cname) - 1] = 0;
++	
++	path = NULL;
++	if( (stream_name_len = ntfs_fuse_parse_path(pname, &path, &stream_name)) < 0 ||
++		!(piobj->ni = ntfs_pathname_to_inode(ctx->vol, NULL, path)) ||
++		!(piobj->na = ntfs_attr_open(piobj->ni, AT_DATA, stream_name, stream_name_len)) ) {
++		
++		if( piobj->na ) ntfs_attr_close(piobj->na);
++		if( piobj->ni ) ntfs_inode_close(piobj->ni);
++		if( path ) free(path);
++		if( stream_name_len ) free(stream_name);
++		free(piobj);
++		return NULL;
++	}
++	
++	free(path);
++	if( stream_name_len ) free(stream_name);
++	
++	if( !pihead ) pihead = pitail = piobj;
++	else {
++		piobj->pprev  = pitail;
++		pitail = pitail->pnext = piobj; 
++	}
++	
++	iobjs++;
++	
++	return piobj;
++}
++
++
++
+ static int ntfs_fuse_read(const char *org_path, char *buf, size_t size,
+ 		off_t offset, struct fuse_file_info *fi __attribute__((unused)))
+ {
+-	ntfs_inode *ni = NULL;
+-	ntfs_attr *na = NULL;
+-	char *path = NULL;
+-	ntfschar *stream_name;
+-	int stream_name_len, res;
++	PIOBJ piobj;
++	int res = 0, iboffset, ibsize;
+ 	s64 total = 0;
+ 	s64 max_read;
+ 
+-	if (!size)
+-		return 0;
++	if( !size ) return 0;
+ 
+-	stream_name_len = ntfs_fuse_parse_path(org_path, &path, &stream_name);
+-	if (stream_name_len < 0)
+-		return stream_name_len;
+-	ni = ntfs_pathname_to_inode(ctx->vol, NULL, path);
+-	if (!ni) {
+-		res = -errno;
++	if( !(piobj = get_iobj(org_path, UPDATE_ATIME)) ) return -1;
++
++	if( piobj->icache && offset >= piobj->offset && offset < piobj->offset + piobj->size ) {
++		iboffset = offset - piobj->offset;
++		ibsize = size > piobj->size - iboffset ? piobj->size - iboffset : size;
++		memcpy(buf, &piobj->ccache[iboffset], ibsize);
++		
++		if( ibsize == size ) {
++	 		res = ibsize;
+ 		goto exit;
+ 	}
+-	na = ntfs_attr_open(ni, AT_DATA, stream_name, stream_name_len);
+-	if (!na) {
+-		res = -errno;
+-		goto exit;
++		
++		offset += ibsize;
++		size -= ibsize;
++		total = ibsize;
+ 	}
+-	max_read = na->data_size;
++	
++	flush_iobj_buf(piobj);
++	
++	max_read = piobj->na->data_size;
+ #ifdef HAVE_SETXATTR	/* extended attributes interface required */
+ 	/* limit reads at next 512 byte boundary for encrypted attributes */
+-	if (ctx->efs_raw && (na->data_flags & ATTR_IS_ENCRYPTED) && 
+-            NAttrNonResident(na)) {
+-		max_read = ((na->data_size+511) & ~511) + 2;
++	if (ctx->efs_raw && (piobj->na->data_flags & ATTR_IS_ENCRYPTED) && 
++            NAttrNonResident(piobj->na)) {
++		max_read = ((piobj->na->data_size+511) & ~511) + 2;
+ 	}
+ #endif /* HAVE_SETXATTR */
+ 	if (offset + (off_t)size > max_read) {
+ 		if (max_read < offset)
+-			goto ok;
++			goto exit;
+ 		size = max_read - offset;
+ 	}
++	
+ 	while (size > 0) {
+-		s64 ret = ntfs_attr_pread(na, offset, size, buf + total);
++		s64 ret = ntfs_attr_pread(piobj->na, offset, size, buf + total);
+ 		if (ret != (s64)size)
+ 			ntfs_log_perror("ntfs_attr_pread error reading '%s' at "
+ 				"offset %lld: %lld <> %lld", org_path, 
+ 				(long long)offset, (long long)size, (long long)ret);
+ 		if (ret <= 0 || ret > (s64)size) {
+-			res = (ret < 0) ? -errno : -EIO;
++			if( !total ) res = (ret < 0) ? -errno : -EIO;
++			else res = total;
+ 			goto exit;
+ 		}
+ 		size -= ret;
+ 		offset += ret;
+ 		total += ret;
+ 	}
+-ok:
+-	ntfs_fuse_update_times(na->ni, NTFS_UPDATE_ATIME);
++	
+ 	res = total;
++
+ exit:
+-	if (na)
+-		ntfs_attr_close(na);
+-	if (ntfs_inode_close(ni))
+-		set_fuse_error(&res);
+-	free(path);
+-	if (stream_name_len)
+-		free(stream_name);
+ 	return res;
+ }
+ 
+ static int ntfs_fuse_write(const char *org_path, const char *buf, size_t size,
+ 		off_t offset, struct fuse_file_info *fi __attribute__((unused)))
+ {
+-	ntfs_inode *ni = NULL;
+-	ntfs_attr *na = NULL;
+-	char *path = NULL;
+-	ntfschar *stream_name;
+-	int stream_name_len, res, total = 0;
++	PIOBJ piobj;
++	int res;
++	s64 ret, total;
++	
++	if( !size ) return 0;
++
++	if( !(piobj = get_iobj(org_path, UPDATE_MTIME)) ) return -1;
++	
++	if( !piobj->icache && size <= IOBJ_CSIZE ) {
++		memcpy(piobj->ccache, buf, size);
++		piobj->offset = offset;
++		piobj->size = size;
++		piobj->icache = 1;
++		res = size;
+ 
+-	stream_name_len = ntfs_fuse_parse_path(org_path, &path, &stream_name);
+-	if (stream_name_len < 0) {
+-		res = stream_name_len;
+-		goto out;
+-	}
+-	ni = ntfs_pathname_to_inode(ctx->vol, NULL, path);
+-	if (!ni) {
+-		res = -errno;
+ 		goto exit;
+ 	}
+-	na = ntfs_attr_open(ni, AT_DATA, stream_name, stream_name_len);
+-	if (!na) {
+-		res = -errno;
++	
++	if( piobj->icache && 
++		 piobj->offset + piobj->size == offset &&
++		 piobj->size + size <= IOBJ_CSIZE ) {
++		 
++		 memcpy(&piobj->ccache[piobj->size], buf, size);
++		 piobj->size += size;
++		 res = size;
++		 
+ 		goto exit;
+ 	}
++
++	if( (res	= flush_iobj_buf(piobj)) < 0 ) goto exit;
++
++	total = 0;
+ 	while (size) {
+-		s64 ret = ntfs_attr_pwrite(na, offset, size, buf + total);
+-		if (ret <= 0) {
++		if( (ret = ntfs_attr_pwrite(piobj->na, offset, size, buf + total)) <= 0 ) {
+ 			res = -errno;
+ 			goto exit;
+ 		}
+@@ -1097,19 +1257,8 @@
+ 		total  += ret;
+ 	}
+ 	res = total;
+-	if (res > 0)
+-		ntfs_fuse_update_times(na->ni, NTFS_UPDATE_MCTIME);
++	
+ exit:
+-	if (na)
+-		ntfs_attr_close(na);
+-	if (total)
+-		set_archive(ni);
+-	if (ntfs_inode_close(ni))
+-		set_fuse_error(&res);
+-	free(path);
+-	if (stream_name_len)
+-		free(stream_name);
+-out:	
+ 	return res;
+ }
+ 
+@@ -1122,6 +1271,8 @@
+ 	ntfschar *stream_name;
+ 	int stream_name_len, res;
+ 
++	free_iobj_name(org_path);
++
+ 	/* Only for marked descriptors there is something to do */
+ 	if (!(fi->fh & (CLOSE_COMPRESSED | CLOSE_ENCRYPTED))) {
+ 		res = 0;
+@@ -1183,6 +1334,8 @@
+ 	struct SECURITY_CONTEXT security;
+ #endif
+ 
++	free_iobj_name(org_path);
++
+ 	stream_name_len = ntfs_fuse_parse_path(org_path, &path, &stream_name);
+ 	if (stream_name_len < 0)
+ 		return stream_name_len;
+@@ -1267,6 +1420,7 @@
+ 	if (ntfs_fuse_is_named_data_stream(path))
+ 		return -EINVAL; /* n/a for named data streams. */
+ 
++		
+ 	  /* JPA return unsupported if no user mapping has been defined */
+ 	if (!ntfs_fuse_fill_security_context(&security)) {
+ 		if (ctx->silent)
+@@ -4044,6 +4198,8 @@
+ 	
+ 	fuse_loop(fh);
+ 	
++	free_iobj_name(NULL);
++	
+ 	err = 0;
+ 
+ 	fuse_unmount(opts.mnt_point, ctx->fc);
