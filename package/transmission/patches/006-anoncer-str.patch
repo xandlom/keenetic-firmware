@@ -1,0 +1,22 @@
+diff -U 3 -dHBbrN -- transmission-1.83.orig/libtransmission/announcer.c transmission-1.83/libtransmission/announcer.c
+--- transmission-1.83.orig/libtransmission/announcer.c	2010-02-08 07:44:58.000000000 +0300
++++ transmission-1.83/libtransmission/announcer.c	2010-02-08 11:25:20.510186935 +0300
+@@ -1273,6 +1273,8 @@
+ 
+         if( responseCode == HTTP_OK )
+         {
++            tr_strlcpy( tier->lastAnnounceStr, _( "Success" ), sizeof( tier->lastAnnounceStr ) );
++	    
+             success = parseAnnounceResponse( tier, response, responseLen, &gotScrape );
+             dbgmsg( tier, "success is %d", success );
+ 
+@@ -1578,6 +1580,9 @@
+             const int interval = tier->scrapeIntervalSec;
+             tier->scrapeAt = now + interval;
+ 
++            tr_strlcpy( tier->lastScrapeStr, _( "Success" ),
++                        sizeof( tier->lastScrapeStr ) );
++
+             if( responseCode == HTTP_OK )
+                 success = parseScrapeResponse( tier, response, responseLen,
+                                                tier->lastScrapeStr, sizeof( tier->lastScrapeStr ) );

@@ -1,0 +1,15 @@
+diff -ruN transmission-1.83+.orig/libtransmission/fdlimit.c transmission-1.83+/libtransmission/fdlimit.c
+--- transmission-1.83+.orig/libtransmission/fdlimit.c	2010-02-03 06:39:00.000000000 +0300
++++ transmission-1.83+/libtransmission/fdlimit.c	2010-02-03 08:39:17.000000000 +0300
+@@ -186,6 +186,11 @@
+         }
+ # endif
+ 
++        if( !success ) /* fake allocate */
++        {
++            success = !ftruncate(fd, length);
++        }
++
+         if( !success ) /* if nothing else works, do it the old-fashioned way */
+         {
+             uint8_t buf[ 4096 ];

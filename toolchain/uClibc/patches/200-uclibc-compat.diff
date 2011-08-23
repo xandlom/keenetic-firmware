@@ -1,0 +1,29 @@
+diff -upr uClibc-0.9.29.old/libc/misc/internals/__uClibc_main.c uClibc-0.9.29/libc/misc/internals/__uClibc_main.c
+--- uClibc-0.9.29.old/libc/misc/internals/__uClibc_main.c	2008-03-29 01:22:56.000000000 +0300
++++ uClibc-0.9.29/libc/misc/internals/__uClibc_main.c	2008-03-29 01:24:37.000000000 +0300
+@@ -261,8 +261,10 @@ void __uClibc_fini(void)
+     if (__app_fini != NULL)
+ 	(__app_fini)();
+ #endif
++#ifdef COMPAT_LEXRA_HACK
+     if (__rtld_fini != NULL)
+ 	(__rtld_fini)();
++#endif
+ }
+ libc_hidden_def(__uClibc_fini)
+ 
+@@ -400,6 +402,14 @@ void __uClibc_main(int (*main)(int, char
+     exit(main(argc, argv, __environ));
+ }
+ 
++extern int weak_function main(int argc, char **argv, char **envp);
++void __attribute__ ((__noreturn__))
++__uClibc_start_main(int argc, char **argv, char **envp,
++	void (*app_fini)(void), void (*app_init)(void), void (*rtld_fini)(void), void *stack_end)
++{
++	__uClibc_main(main, argc, argv, app_init, app_fini, rtld_fini, stack_end);
++}
++
+ #if defined(__UCLIBC_HAS_THREADS__) && !defined(SHARED)
+ /* Weaks for internal library use only.
+  *

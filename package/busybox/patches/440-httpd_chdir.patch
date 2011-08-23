@@ -1,0 +1,12 @@
+Index: busybox-1.7.2/networking/httpd.c
+===================================================================
+--- busybox-1.7.2.orig/networking/httpd.c	2007-10-30 15:35:04.000000000 -0500
++++ busybox-1.7.2/networking/httpd.c	2007-10-30 15:35:04.000000000 -0500
+@@ -1618,6 +1618,7 @@
+ #if ENABLE_FEATURE_HTTPD_BASIC_AUTH
+ 	int credentials = -1;  /* if not required this is Ok */
+ #endif
++	xchdir(home_httpd);
+ 
+ 	/* Allocation of iobuf is postponed until now
+ 	 * (IOW, server process doesn't need to waste 8k) */

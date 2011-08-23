@@ -1,0 +1,36 @@
+body {
+	-webkit-text-size-adjust: none;
+}
+div.head, div.redline, div.container {
+	position: fixed;
+	left: 0px;
+	right: 0px;
+	padding: 0px;
+	margin: 0px;
+}
+div.head {
+	top: 0px;
+	height: 50px;
+	background: #0C2F83 url(/i/logo.gif) no-repeat;
+}
+div.redline {
+	top: 50px;
+	height: 3px;
+	background: #a00;
+	border-bottom: 1px solid #B00;
+}
+div.container {
+	top: 54px;
+	bottom: 0px;
+	text-align: center;
+	padding-top: 100px;
+	background: #C5C9CF url('/i/config_bg.gif');
+}
+div.form_frame {
+	display: inline-block;
+	text-align: left;
+	padding: 0px;
+	margin: 8px 8px 0px 8px;
+	width: 62em;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+}

@@ -1,0 +1,52 @@
+diff -ruN transmission-1.91.orig/daemon/daemon.c transmission-1.91/daemon/daemon.c
+--- transmission-1.91.orig/daemon/daemon.c	2010-02-22 05:42:52.000000000 +0300
++++ transmission-1.91/daemon/daemon.c	2010-03-01 09:38:52.000000000 +0300
+@@ -35,7 +35,7 @@
+ 
+ #include "watch.h"
+ 
+-#define MY_NAME "transmission-daemon"
++#define MY_NAME "transmissiond"
+ 
+ #define PREF_KEY_DIR_WATCH          "watch-dir"
+ #define PREF_KEY_DIR_WATCH_ENABLED  "watch-dir-enabled"
+@@ -238,9 +238,9 @@
+         char timestr[64];
+         tr_getLogTimeStr( timestr, sizeof( timestr ) );
+         if( name )
+-            fprintf( logfile, "[%s] %s %s (%s:%d)\n", timestr, name, message, file, line );
++            fprintf( logfile, "[%s] %s %s\n", timestr, name, message);
+         else
+-            fprintf( logfile, "[%s] %s (%s:%d)\n", timestr, message, file, line );
++            fprintf( logfile, "[%s] %s\n", timestr, message);
+     }
+ #ifdef HAVE_SYSLOG
+     else /* daemon... write to syslog */
+@@ -255,9 +255,9 @@
+         }
+ 
+         if( name )
+-            syslog( priority, "%s %s (%s:%d)", name, message, file, line );
++            syslog( priority, "%s %s", name, message);
+         else
+-            syslog( priority, "%s (%s:%d)", message, file, line );
++            syslog( priority, "%s", message);
+     }
+ #endif
+ }
+diff -ruN transmission-1.91.orig/libtransmission/bencode.c transmission-1.91/libtransmission/bencode.c
+--- transmission-1.91.orig/libtransmission/bencode.c	2010-02-22 05:42:48.000000000 +0300
++++ transmission-1.91/libtransmission/bencode.c	2010-03-01 10:15:06.000000000 +0300
+@@ -1639,11 +1639,7 @@
+             {
+                 tr_dbg( "Renaming \"%s\" as \"%s\"", tmp, filename );
+ 
+-                if( !rename( tmp, filename ) )
+-                {
+-                    tr_inf( _( "Saved \"%s\"" ), filename );
+-                }
+-                else
++                if( rename( tmp, filename ) )
+                 {
+                     err = errno;
+                     tr_err( _( "Couldn't save file \"%1$s\": %2$s" ), filename, tr_strerror( err ) );

@@ -1,0 +1,21 @@
+diff -ruN uClibc-0.9.32.orig/Rules.mak uClibc-0.9.32/Rules.mak
+--- uClibc-0.9.32.orig/Rules.mak	2010-07-01 02:19:25.000000000 +0400
++++ uClibc-0.9.32/Rules.mak	2010-07-01 21:34:10.000000000 +0400
+@@ -106,7 +106,7 @@
+ MAJOR_VERSION := 0
+ MINOR_VERSION := 9
+ SUBLEVEL      := 32
+-EXTRAVERSION  :=-git
++EXTRAVERSION  :=
+ VERSION       := $(MAJOR_VERSION).$(MINOR_VERSION).$(SUBLEVEL)
+ ABI_VERSION   := $(MAJOR_VERSION)
+ ifneq ($(EXTRAVERSION),)
+@@ -531,7 +531,7 @@
+ ifeq ($(EXTRA_WARNINGS),y)
+ XWARNINGS+=-Wnested-externs -Wshadow -Wmissing-noreturn -Wmissing-format-attribute -Wformat=2
+ XWARNINGS+=-Wmissing-prototypes -Wmissing-declarations
+-XWARNINGS+=-Wold-style-declaration -Wold-style-definition
++#XWARNINGS+=-Wold-style-declaration -Wold-style-definition
+ XWARNINGS+=-Wnonnull -Wundef
+ # Works only w/ gcc-3.4 and up, can't be checked for gcc-3.x w/ check_gcc()
+ #XWARNINGS+=-Wdeclaration-after-statement

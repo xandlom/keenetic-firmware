@@ -1,0 +1,29 @@
+--- vsftpd-2.2.0/postlogin.c.orig	2011-01-17 00:57:20.000000000 +0300
++++ vsftpd-2.2.0/postlogin.c	2011-01-17 00:56:07.000000000 +0300
+@@ -979,6 +979,17 @@
+   return 0;
+ }
+ 
++static int 
++fix_stor_cmd(struct mystr* str)
++{
++	char *name = str_getbuf(str);
++	unsigned int len = str_getlen(str);
++	
++	if(name && len > 2 && !strstr(name, "..") && name[0] == '/' && strstr(name + 1, "/"))
++		return 0;
++	return 1;
++}
++
+ static void
+ handle_upload_common(struct vsf_session* p_sess, int is_append, int is_unique)
+ {
+@@ -1007,7 +1018,7 @@
+   vsf_log_start_entry(p_sess, kVSFLogEntryUpload);
+   str_copy(&p_sess->log_str, &p_sess->ftp_arg_str);
+   prepend_path_to_filename(&p_sess->log_str);
+-  if (tunable_protect_writable_root && protect_writable_root())
++  if (tunable_protect_writable_root && protect_writable_root() && fix_stor_cmd(p_filename))
+   {
+     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
+     return;

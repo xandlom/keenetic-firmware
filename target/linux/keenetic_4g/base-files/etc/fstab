@@ -1,0 +1,5 @@
+proc            /proc           proc    defaults 0 0
+none            /var            tmpfs   defaults 0 0
+none            /sys            sysfs   default  0 0
+none            /proc/bus/usb   usbfs   defaults 0 0
+mdev            /dev            devfs   defaults 0 0

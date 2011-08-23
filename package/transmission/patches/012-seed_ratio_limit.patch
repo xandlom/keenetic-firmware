@@ -1,0 +1,109 @@
+diff -ruN transmission-1.91.orig/libtransmission/session.c transmission-1.91/libtransmission/session.c
+--- transmission-1.91.orig/libtransmission/session.c	2010-03-11 23:50:23.000000000 +0300
++++ transmission-1.91/libtransmission/session.c	2010-03-11 10:14:56.000000000 +0300
+@@ -272,7 +272,7 @@
+     tr_bencDictAddInt ( d, TR_PREFS_KEY_PROXY_PORT,               80 );
+     tr_bencDictAddInt ( d, TR_PREFS_KEY_PROXY_TYPE,               TR_PROXY_HTTP );
+     tr_bencDictAddStr ( d, TR_PREFS_KEY_PROXY_USERNAME,           "" );
+-    tr_bencDictAddReal( d, TR_PREFS_KEY_RATIO,                    2.0 );
++    tr_bencDictAddReal( d, TR_PREFS_KEY_RATIO,                    1.5 );
+     tr_bencDictAddBool( d, TR_PREFS_KEY_RATIO_ENABLED,            FALSE );
+     tr_bencDictAddBool( d, TR_PREFS_KEY_RENAME_PARTIAL_FILES,     TRUE );
+     tr_bencDictAddBool( d, TR_PREFS_KEY_RPC_AUTH_REQUIRED,        FALSE );
+diff -ruN transmission-1.91.orig/web/index.html transmission-1.91/web/index.html
+--- transmission-1.91.orig/web/index.html	2010-03-11 23:50:23.000000000 +0300
++++ transmission-1.91/web/index.html	2010-03-11 23:47:34.000000000 +0300
+@@ -216,7 +216,7 @@
+ 					<div id="prefs_tabs">
+ 						<ul>
+ 							<li id="prefs_tab_general_tab" class="prefs_tab_enabled">Общие</li>
+-							<li id="prefs_tab_speed_tab" class="prefs_tab_disabled">Скорость</li>
++							<li id="prefs_tab_speed_tab" class="prefs_tab_disabled">Скорость и рейтинг</li>
+ 						</ul>
+ 						<div id="prefs_tab_general" class="prefs_tab">
+ 							<div class="preference download_location">
+@@ -271,16 +271,21 @@
+ 								<label class="category">Ограничения</label>
+ 								<div class="formdiv checkbox">
+ 									<input type="checkbox" name="limit_download" id="limit_download"/>
+-									<label for="limit_download" class="item">закачки:</label>
++									<label for="limit_download" class="item">Закачки:</label>
+ 									<input type="text" name="download_rate" id="download_rate"/>
+ 									<label class="suffix">кБ/с</label>
+ 								</div>
+ 								<div class="formdiv checkbox">
+ 									<input type="checkbox" name="limit_upload" id="limit_upload"/>
+-									<label for="limit_upload" class="item">раздачи:</label>
++									<label for="limit_upload" class="item">Раздачи:</label>
+ 									<input type="text" name="upload_rate" id="upload_rate"/>
+ 									<label class="suffix">кБ/с</label>
+ 								</div>
++								<div class="formdiv checkbox">
++									<input type="checkbox" name="limit_ratio" id="limit_ratio"/>
++									<label for="limit_ratio" class="item">Раздачи по рейтингу:</label>
++									<input type="text" name="seed_ratio_limit" id="seed_ratio_limit"/>
++								</div>
+ 							</div>
+ 							<div class="preference limit_turtle">
+ 								<label class="category">Ограничения в режиме "Черепашка"</label>
+diff -ruN transmission-1.91.orig/web/javascript/transmission.js transmission-1.91/web/javascript/transmission.js
+--- transmission-1.91.orig/web/javascript/transmission.js	2010-03-11 23:50:23.000000000 +0300
++++ transmission-1.91/web/javascript/transmission.js	2010-03-11 23:37:16.000000000 +0300
+@@ -175,7 +175,7 @@
+ 	setupPrefConstraints: function() {
+ 		// only allow integers for speed limit & port options
+ 		$('div.preference input[@type=text]:not(#download_location)').blur( function() {
+-			this.value = this.value.replace(/[^0-9]/gi, '');
++			this.value = this.value.replace(/[^0-9\.]/gi, '');
+ 			if (this.value == '') {
+ 				if ($(this).is('#refresh_rate')) {
+ 					this.value = 5;
+@@ -636,6 +636,10 @@
+ 		// o[RPC._DownloadDir]          = $('#prefs_form #download_location')[0].value;
+ 		o[RPC._UpSpeedLimited]       = $('#prefs_form #limit_upload')[0].checked;
+ 		o[RPC._DownSpeedLimited]     = $('#prefs_form #limit_download')[0].checked;
++		
++		o[RPC._seedRatioLimit]       = parseFloat( $('#prefs_form #seed_ratio_limit')[0].value );
++		o[RPC._seedRatioLimited]     = $('#prefs_form #limit_ratio')[0].checked;
++
+ 		o[RPC._Encryption]           = $('#prefs_form #encryption')[0].checked
+ 		                                   ? RPC._EncryptionRequired
+ 		                                   : RPC._EncryptionPreferred;
+@@ -888,6 +892,8 @@
+ 		$('div.auto_start input')[0].checked      = prefs[Prefs._AutoStart];
+ 		$('div.dht_enable input')[0].checked      = prefs[RPC._DHTState];
+ 		$('div.pex_enable input')[0].checked      = prefs[RPC._PEXState];
++		$('input#limit_ratio')[0].checked         = prefs[RPC._seedRatioLimited];
++		$('input#seed_ratio_limit')[0].value      = prefs[RPC._seedRatioLimit];
+ 		$('input#limit_download')[0].checked      = down_limited;
+ 		$('input#download_rate')[0].value         = down_limit;
+ 		$('input#limit_upload')[0].checked        = up_limited;
+diff -ruN transmission-1.91.orig/web/javascript/transmission.remote.js transmission-1.91/web/javascript/transmission.remote.js
+--- transmission-1.91.orig/web/javascript/transmission.remote.js	2010-03-11 23:50:23.000000000 +0300
++++ transmission-1.91/web/javascript/transmission.remote.js	2010-03-11 10:14:56.000000000 +0300
+@@ -21,6 +21,8 @@
+ RPC._PeerPort               = 'peer-port';
+ RPC._UpSpeedLimited         = 'speed-limit-up-enabled';
+ RPC._DownSpeedLimited       = 'speed-limit-down-enabled';
++RPC._seedRatioLimited       = 'seedRatioLimited';
++RPC._seedRatioLimit         = 'seedRatioLimit';
+ RPC._TurtleState            = 'alt-speed-enabled';
+ RPC._DHTState               = 'dht-enabled';
+ RPC._PEXState               = 'pex-enabled';
+diff -ruN transmission-1.91.orig/web/stylesheets/common.css transmission-1.91/web/stylesheets/common.css
+--- transmission-1.91.orig/web/stylesheets/common.css	2010-03-11 23:50:23.000000000 +0300
++++ transmission-1.91/web/stylesheets/common.css	2010-03-11 23:46:02.000000000 +0300
+@@ -1016,11 +1016,11 @@
+ }
+ 
+ div#prefs_container div.limit_total label.item {
+-	width: 102px;
++	width: 140px;
+ }
+ 
+ div#prefs_container div.limit_turtle label.item {
+-	width: 120px;
++	width: 158px;
+ }
+ 
+ div#prefs_container div.preference input[type=checkbox] {

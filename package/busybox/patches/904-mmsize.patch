@@ -1,0 +1,23 @@
+diff -U 3 -dHBbrN -- busybox-1.8.2.orig/networking/udhcp/clientpacket.c busybox-1.8.2/networking/udhcp/clientpacket.c
+--- busybox-1.8.2.orig/networking/udhcp/clientpacket.c	2010-12-18 10:42:05.000000000 +0300
++++ busybox-1.8.2/networking/udhcp/clientpacket.c	2010-12-18 10:27:53.000000000 +0300
+@@ -81,6 +81,8 @@
+ 	if (requested)
+ 		add_simple_option(packet.options, DHCP_REQUESTED_IP, requested);
+ 
++	add_simple_option(packet.options, DHCP_MAX_SIZE, htons(sizeof(struct udp_dhcp_packet) - 14));
++
+ 	add_requests(&packet);
+ 	if (msgs++ < 3)
+ 		bb_info_msg("Sending discover...");
+diff -U 3 -dHBbrN -- busybox-1.8.2.orig/networking/udhcp/options.c busybox-1.8.2/networking/udhcp/options.c
+--- busybox-1.8.2.orig/networking/udhcp/options.c	2010-12-18 10:42:06.000000000 +0300
++++ busybox-1.8.2/networking/udhcp/options.c	2010-12-18 10:18:43.000000000 +0300
+@@ -53,6 +53,7 @@
+ 	{"mcl_routes", OPTION_STATIC_ROUTES | OPTION_REQ, DHCP_MICROSOFT_CLASSLESS_STATIC_ROUTES}, /* 0xf9 */
+ 	/* MSIE's "Web Proxy Autodiscovery Protocol" support */
+ 	{"wpad",        OPTION_STRING,                          0xfc},
++	{"mmsize",		 OPTION_U16, 									  0x39}, /* DHCP_MAX_SIZE      */
+ 	{"",            0x00,                                   0x00}
+ };
+ 

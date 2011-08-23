@@ -1,0 +1,13 @@
+--- transmission-1.91.orig/libtransmission/inout.c	2010-07-14 18:29:37.000000000 +0400
++++ transmission-1.91/libtransmission/inout.c	2010-07-14 18:31:51.000000000 +0400
+@@ -223,8 +223,10 @@
+ 
+     if( pieceIndex >= tor->info.pieceCount )
+         return EINVAL;
++    /*
+     if( pieceOffset + buflen > tr_torPieceCountBytes( tor, pieceIndex ) )
+         return EINVAL;
++    */
+ 
+     tr_ioFindFileLocation( tor, pieceIndex, pieceOffset,
+                            &fileIndex, &fileOffset );

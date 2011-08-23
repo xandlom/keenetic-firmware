@@ -1,0 +1,11 @@
+--- dnsmasq-2.55/src/dnsmasq.c.orig	2010-06-07 12:54:28.000000000 +0400
++++ dnsmasq-2.55/src/dnsmasq.c	2011-01-28 10:49:31.000000000 +0300
+@@ -451,7 +451,7 @@
+   else
+     my_syslog(LOG_INFO, _("started, version %s cache disabled"), VERSION);
+   
+-  my_syslog(LOG_INFO, _("compile time options: %s"), compile_opts);
++  /* my_syslog(LOG_INFO, _("compile time options: %s"), compile_opts); */
+   
+ #ifdef HAVE_DBUS
+   if (daemon->options & OPT_DBUS)

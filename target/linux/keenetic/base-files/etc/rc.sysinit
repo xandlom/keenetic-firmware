@@ -1,0 +1,29 @@
+#!/bin/sh
+
+if [ -f /etc/fstab ]; then
+    mount -a
+else
+    mount -t proc none /proc
+    mount -t tmpfs none /var
+fi
+
+if [ -x "/bin/setup-target.sh" ]; then
+    /bin/setup-target.sh
+fi
+
+ifconfig lo 127.0.0.1
+
+DIRS="web ppp udhcpc udhcpd usbstatus dnrd run lib/misc linuxigd tmp log lock ftpusers run/ftpd"
+
+for dir in $DIRS ; do
+	mkdir -p /var/$dir
+done
+
+# Start system scripts launcher
+launcher
+
+# Start system script
+launch "/bin/init.sh gw all"
+
+# Start other services
+launch "/bin/services.sh"

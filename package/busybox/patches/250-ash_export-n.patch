@@ -1,0 +1,37 @@
+Index: busybox-1.7.2/shell/ash.c
+===================================================================
+--- busybox-1.7.2.orig/shell/ash.c	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/shell/ash.c	2007-10-30 15:35:02.000000000 -0500
+@@ -11310,8 +11310,18 @@
+ 	const char *p;
+ 	char **aptr;
+ 	int flag = argv[0][0] == 'r'? VREADONLY : VEXPORT;
++	int mask = ~0;
++	int nopt;
+ 
+-	if (nextopt("p") != 'p') {
++	while ((nopt = nextopt("np"))) {
++		if (nopt == 'n') {
++				mask = ~flag;
++		} else { /* p */
++			break;
++		}
++	}
++
++	if (nopt != 'p') {
+ 		aptr = argptr;
+ 		name = *aptr;
+ 		if (name) {
+@@ -11323,10 +11333,11 @@
+ 					vp = *findvar(hashvar(name), name);
+ 					if (vp) {
+ 						vp->flags |= flag;
++						vp->flags &= mask;
+ 						continue;
+ 					}
+ 				}
+-				setvar(name, p, flag);
++				setvar(name, p, flag & mask);
+ 			} while ((name = *++aptr) != NULL);
+ 			return 0;
+ 		}

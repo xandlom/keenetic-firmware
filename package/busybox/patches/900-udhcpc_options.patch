@@ -1,0 +1,271 @@
+diff -upr busybox-1.8.2.old/networking/udhcp/options.c busybox-1.8.2/networking/udhcp/options.c
+--- busybox-1.8.2.old/networking/udhcp/options.c	2008-12-03 20:44:01.000000000 +0300
++++ busybox-1.8.2/networking/udhcp/options.c	2008-12-03 20:43:45.000000000 +0300
+@@ -29,9 +29,11 @@ const struct dhcp_option dhcp_options[] 
+ 	{"ipttl",       OPTION_U8,                              0x17},
+ 	{"mtu",         OPTION_U16,                             0x1a},
+ 	{"broadcast",   OPTION_IP | OPTION_REQ,                 0x1c},
++	{"sroutes",	OPTION_IP_PAIR | OPTION_REQ, 		0x21},
+ 	{"nisdomain",   OPTION_STRING | OPTION_REQ,             0x28},
+ 	{"nissrv",      OPTION_IP | OPTION_LIST | OPTION_REQ,   0x29},
+ 	{"ntpsrv",      OPTION_IP | OPTION_LIST | OPTION_REQ,   0x2a},
++	{"vendorinfo",  OPTION_SUBOPTIONS | OPTION_REQ,         DHCP_VENDOR_INFO}, /* 0x2b */
+ 	{"wins",        OPTION_IP | OPTION_LIST,                0x2c},
+ 	{"requestip",   OPTION_IP,                              0x32},
+ 	{"lease",       OPTION_U32,                             0x33},
+@@ -43,14 +45,23 @@ const struct dhcp_option dhcp_options[] 
+ 	{"tftp",        OPTION_STRING,                          0x42},
+ 	{"bootfile",    OPTION_STRING,                          0x43},
+ 	{"userclass",   OPTION_STRING,                          0x4D},
++
++	{"cl_routes", OPTION_STATIC_ROUTES | OPTION_REQ, DHCP_CLASSLESS_STATIC_ROUTES}, /* 0x79 */
+ #if ENABLE_FEATURE_RFC3397
+ 	{"search",      OPTION_STR1035 | OPTION_LIST | OPTION_REQ, 0x77},
+ #endif
++	{"mcl_routes", OPTION_STATIC_ROUTES | OPTION_REQ, DHCP_MICROSOFT_CLASSLESS_STATIC_ROUTES}, /* 0xf9 */
+ 	/* MSIE's "Web Proxy Autodiscovery Protocol" support */
+ 	{"wpad",        OPTION_STRING,                          0xfc},
+ 	{"",            0x00,                                   0x00}
+ };
+ 
++const struct dhcp_option dhcp_sub_options[] = {
++	/* name[12]     flags                                   code */
++	{"option1",     OPTION_STRING, 				0x01},
++	{"",            0x00,                                   0x00}
++};
++
+ /* Lengths of the different option types */
+ const unsigned char option_lengths[] ALIGN1 = {
+ 	[OPTION_IP] =      4,
+@@ -64,7 +75,9 @@ const unsigned char option_lengths[] ALI
+ 	[OPTION_U16] =     2,
+ 	[OPTION_S16] =     2,
+ 	[OPTION_U32] =     4,
+-	[OPTION_S32] =     4
++	[OPTION_S32] =     4,
++	[OPTION_SUBOPTIONS] = 1,
++	[OPTION_STATIC_ROUTES] = 1,
+ };
+ 
+ 
+@@ -155,7 +168,6 @@ int add_option_string(uint8_t *optionptr
+ 	return string[OPT_LEN] + 2;
+ }
+ 
+-
+ /* add a one to four byte option to a packet */
+ int add_simple_option(uint8_t *optionptr, uint8_t code, uint32_t data)
+ {
+diff -upr busybox-1.8.2.old/networking/udhcp/options.h busybox-1.8.2/networking/udhcp/options.h
+--- busybox-1.8.2.old/networking/udhcp/options.h	2008-12-03 20:44:01.000000000 +0300
++++ busybox-1.8.2/networking/udhcp/options.h	2008-12-03 20:43:45.000000000 +0300
+@@ -17,7 +17,9 @@ enum {
+ 	OPTION_U16,
+ 	OPTION_S16,
+ 	OPTION_U32,
+-	OPTION_S32
++	OPTION_S32,
++	OPTION_STATIC_ROUTES,
++	OPTION_SUBOPTIONS
+ };
+ 
+ #define OPTION_REQ	0x10 /* have the client request this option */
+@@ -52,7 +54,9 @@ enum {
+ #define DHCP_IP_TTL		0x17
+ #define DHCP_MTU		0x1a
+ #define DHCP_BROADCAST		0x1c
++#define DHCP_STATIC_ROUTES	0x21
+ #define DHCP_NTP_SERVER		0x2a
++#define DHCP_VENDOR_INFO	0x2b
+ #define DHCP_WINS_SERVER	0x2c
+ #define DHCP_REQUESTED_IP	0x32
+ #define DHCP_LEASE_TIME		0x33
+@@ -67,7 +71,8 @@ enum {
+ #define DHCP_VENDOR		0x3c
+ #define DHCP_CLIENT_ID		0x3d
+ #define DHCP_FQDN		0x51
+-
++#define DHCP_CLASSLESS_STATIC_ROUTES	0x79
++#define DHCP_MICROSOFT_CLASSLESS_STATIC_ROUTES	0xf9
+ #define DHCP_END		0xFF
+ 
+ 
+@@ -104,6 +109,7 @@ struct dhcp_option {
+ };
+ 
+ extern const struct dhcp_option dhcp_options[];
++extern const struct dhcp_option dhcp_sub_options[];
+ extern const unsigned char option_lengths[];
+ 
+ uint8_t *get_option(struct dhcpMessage *packet, int code);
+diff -upr busybox-1.8.2.old/networking/udhcp/script.c busybox-1.8.2/networking/udhcp/script.c
+--- busybox-1.8.2.old/networking/udhcp/script.c	2008-12-03 20:44:01.000000000 +0300
++++ busybox-1.8.2/networking/udhcp/script.c	2008-12-03 20:44:20.000000000 +0300
+@@ -17,6 +17,7 @@
+ static const uint8_t max_option_length[] = {
+ 	[OPTION_IP] =		sizeof("255.255.255.255 "),
+ 	[OPTION_IP_PAIR] =	sizeof("255.255.255.255 ") * 2,
++	[OPTION_STATIC_ROUTES] = sizeof("255.255.255.255 ") * 3,
+ 	[OPTION_STRING] =	1,
+ #if ENABLE_FEATURE_RFC3397
+ 	[OPTION_STR1035] =	1,
+@@ -27,6 +28,7 @@ static const uint8_t max_option_length[]
+ 	[OPTION_S16] =		sizeof("-32768 "),
+ 	[OPTION_U32] =		sizeof("4294967295 "),
+ 	[OPTION_S32] =		sizeof("-2147483684 "),
++	[OPTION_SUBOPTIONS] =	40, /* We can get IP address inside */
+ };
+ 
+ 
+@@ -54,6 +56,61 @@ static int mton(struct in_addr *mask)
+ 	return 32 - i;
+ }
+ 
++static uint8_t* mask_to_ip(uint8_t * ip, uint8_t mask)
++{
++	int i;
++	uint32_t ret = 0;
++
++	ret = (0xffffffff) << (0x20 - mask);
++		
++	ip[0] = (ret >> 24) & 0xff;
++	ip[1] = (ret >> 16) & 0xff;
++	ip[2] = (ret >> 8) & 0xff;
++	ip[3] = ret & 0xff;
++	return ip;
++}
++
++inline
++static void extract_route_octets( uint8_t *ret_ip, uint8_t* p, int mask, int *adv)
++{
++	*adv = 0;
++
++	if (mask >= 25 && mask <= 32) {
++		*adv = 4;
++		ret_ip[0] = p[0];
++		ret_ip[1] = p[1];
++		ret_ip[2] = p[2];
++		ret_ip[3] = p[3];
++		
++		return;
++	} else if (mask >= 17 && mask <= 24) {
++		*adv = 3;
++		ret_ip[0] = p[0];
++		ret_ip[1] = p[1];
++		ret_ip[2] = p[2];
++		ret_ip[3] = 0;
++
++		return;
++	} else if (mask >= 9 && mask <= 16) {
++		*adv = 2;
++		ret_ip[0] = p[0];
++		ret_ip[1] = p[1];
++		ret_ip[2] = 0;
++		ret_ip[3] = 0;
++		
++		return;
++	} else if (mask >= 1 && mask <= 8) {
++		(*adv) = 1;
++		ret_ip[0] = p[0];
++		ret_ip[1] = 0;
++		ret_ip[2] = 0;
++		ret_ip[3] = 0;
++		
++		return;
++	}
++
++	ret_ip[0] = ret_ip[1] = ret_ip[2] = ret_ip[3] = 0;
++}
+ 
+ /* Allocate and fill with the text of option 'option'. */
+ static char *alloc_fill_opts(uint8_t *option, const struct dhcp_option *type_p)
+@@ -70,15 +127,19 @@ static char *alloc_fill_opts(uint8_t *op
+ 	optlen = option_lengths[type];
+ 
+ 	dest = ret = xmalloc(upper_length(len, type) + strlen(type_p->name) + 2);
+-	dest += sprintf(ret, "%s=", type_p->name);
++	
++	if (type != OPTION_SUBOPTIONS)
++		dest += sprintf(ret, "%s=", type_p->name);
++	else /* if it has suboptions it will be main-option_suboption= */
++		dest += sprintf(ret, "%s_", type_p->name);
+ 
+ 	for (;;) {
+ 		switch (type) {
+ 		case OPTION_IP_PAIR:
+ 			dest += sprintip(dest, "", option);
+ 			*dest++ = '/';
+-			option += 4;
+-			optlen = 4;
++			dest += sprintip(dest, "", option + 4);
++			break;
+ 		case OPTION_IP:	/* Works regardless of host byte order. */
+ 			dest += sprintip(dest, "", option);
+ 			break;
+@@ -108,6 +169,66 @@ static char *alloc_fill_opts(uint8_t *op
+ 			memcpy(dest, option, len);
+ 			dest[len] = '\0';
+ 			return ret;	 /* Short circuit this case */
++		case OPTION_SUBOPTIONS: {
++			struct dhcpMessage sub_msg;
++			uint8_t* temp;
++			int i;
++
++				memset( &sub_msg, 0, sizeof(sub_msg));
++				memcpy( sub_msg.options, option, MIN(len, sizeof(sub_msg.options)));
++
++				for (i = 0; dhcp_sub_options[i].code; i++) {
++					temp = get_option(&sub_msg, dhcp_sub_options[i].code);
++					if (!temp)
++						continue;
++				
++					temp = alloc_fill_opts(temp, &dhcp_sub_options[i]);
++					strcpy( dest, temp);
++					free( temp);
++				
++					return ret;
++				}
++			}
++		case OPTION_STATIC_ROUTES: {
++			/* we return the static routes in a string containing a list
++			 * of NETWORK1/NETMASK1/GATEWAY1 NETWORK2/NETMASK2/GATEWAY2 ... */
++			    int left = len;
++			    int mask;
++			    int adv;
++			    uint8_t *p = option;
++			    uint8_t ip[4];
++			    
++			    *dest = 0;
++			    
++			    do {
++			    	mask = *p;
++			    	p++;
++			    	left -= 1;
++			    	if (left <= 0) break;
++
++			    	extract_route_octets( ip, p, mask, &adv);
++			    	p += adv;
++			    	left -= adv;
++			    	if (left <= 0) break;
++
++				/* print ip */
++			        dest += sprintip(dest, "", ip);
++				*dest++ = '/';
++
++			        dest += sprintip(dest, "", mask_to_ip(ip, mask));
++				*dest++ = '/';
++				
++				/* print router */
++			        dest += sprintip(dest, "", p);
++				*dest++ = ' ';
++				p += 4;
++				left -= 4;
++				if (left < 0) break;
++
++			    } while(left > 0);
++
++			    return ret;
++			}
+ #if ENABLE_FEATURE_RFC3397
+ 		case OPTION_STR1035:
+ 			/* unpack option into dest; use ret for prefix (i.e., "optname=") */

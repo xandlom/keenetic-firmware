@@ -1,0 +1,25 @@
+div.fade {
+	filter: progid:DXImageTransform.Microsoft.Alpha(opacity=60);
+	position: absolute;
+	left: 260px;
+	top: 190px;
+	margin: 0px 0px 0px 0px;
+	width: 280px;
+	height: 92px;
+}
+
+div.outside_border {
+	display: inline !important;
+
+	border-style: solid;
+	border-width: 1px;
+	border-color: #777 #ccc #ccc #777;
+}
+
+div.file_browser {
+	position: absolute;
+	overflow: auto;
+	border: 1px black outset;
+	background: white;
+	font-family: arial, sans-serif !important;
+}

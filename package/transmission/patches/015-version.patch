@@ -1,0 +1,19 @@
+diff -ruN transmission-1.91.orig/libtransmission/version.h transmission-1.91/libtransmission/version.h
+--- transmission-1.91.orig/libtransmission/version.h	2010-02-22 05:43:30.000000000 +0300
++++ transmission-1.91/libtransmission/version.h	2010-11-08 23:43:28.000000000 +0300
+@@ -1,8 +1,8 @@
+-#define PEERID_PREFIX             "-TR1910-"
+-#define USERAGENT_PREFIX          "1.91"
+-#define SVN_REVISION              "10268"
+-#define SVN_REVISION_NUM          10268
+-#define SHORT_VERSION_STRING      "1.91"
+-#define LONG_VERSION_STRING       "1.91 (10268)"
+-#define VERSION_STRING_INFOPLIST  1.91
++#define PEERID_PREFIX             "-TR1930-"
++#define USERAGENT_PREFIX          "1.93"
++#define SVN_REVISION              "10623"
++#define SVN_REVISION_NUM          10623
++#define SHORT_VERSION_STRING      "1.93"
++#define LONG_VERSION_STRING       "1.93 (10623)"
++#define VERSION_STRING_INFOPLIST  1.93
+ #define TR_STABLE_RELEASE         1

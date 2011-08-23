@@ -1,0 +1,251 @@
+diff -ruN updatedd-2.6-src/configure.ac updatedd-2.6/configure.ac
+--- updatedd-2.6-src/configure.ac	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/configure.ac	2011-02-07 22:14:51.000000000 +0300
+@@ -23,6 +23,7 @@
+ AC_CONFIG_SRCDIR(src/updatedd.c)
+ AM_INIT_AUTOMAKE([gnu dist-bzip2])
+ AC_PROG_CC
++AM_PROG_CC_C_O
+ AC_LIBTOOL_DLOPEN
+ AC_PROG_LIBTOOL
+ AC_ISC_POSIX
+@@ -131,6 +132,24 @@
+ AC_DEFINE_UNQUOTED(HOST_VENDOR, "$host_vendor",
+ 	[System vendor type this program will run on.])
+ 
++
++AC_ARG_WITH([board_type],
++	[AS_HELP_STRING([--with-board-type=type],
++	[Target board type])],target_board="$withval",target_board="UpdateDD")
++
++AC_ARG_WITH([fw_version],
++	[AS_HELP_STRING([--with-fw-version=version],
++	[Global firmware version])],fw_version="$withval",fw_version="2.6")
++
++AC_ARG_WITH([fw_isp],
++	[AS_HELP_STRING([--with-fw-isp=isp],
++	[Firmware customer])],fw_isp="$withval",fw_isp="")
++
++
++AC_DEFINE_UNQUOTED([BOARD_TYPE],["$target_board"],[compile board type])
++AC_DEFINE_UNQUOTED([FW_VERSION],["$fw_version"],[global firmware version])
++AC_DEFINE_UNQUOTED([FW_ISP],["$fw_isp"],[Firmware customer])
++
+ # ------------------] HEADERS [
+ #
+ 
+diff -ruN updatedd-2.6-src/src/plugins/libchangeip.c updatedd-2.6/src/plugins/libchangeip.c
+--- updatedd-2.6-src/src/plugins/libchangeip.c	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/src/plugins/libchangeip.c	2011-02-07 22:19:03.000000000 +0300
+@@ -33,6 +33,7 @@
+ #include <unistd.h>
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
++#include <config.h>
+ #include <version.h>
+ 
+ #include "libchangeip.h"
+@@ -221,10 +222,10 @@
+                                " HTTP/1.1\r\n"
+                                "Host: %s\r\n"
+                                "Authorization: Basic %s\r\n"
+-                               "User-Agent: %s %s - %s\r\n"
++                               "User-Agent: " BOARD_TYPE " " FW_VERSION "\r\n"
+                                "Connection: close\r\n"
+                                "Pragma: no-cache\r\n\r\n",
+-                               DYNDNSHOST, b64user, PNAME, VERSION, HOMEPAGE);
++                               DYNDNSHOST, b64user);
+ 		(void)strncat(message, buffer, BUFLEN - 1 - strlen(message));
+ 	}
+ 	print_debug("\n\nMessage:"
+diff -ruN updatedd-2.6-src/src/plugins/libdyndns.c updatedd-2.6/src/plugins/libdyndns.c
+--- updatedd-2.6-src/src/plugins/libdyndns.c	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/src/plugins/libdyndns.c	2011-02-07 22:18:57.000000000 +0300
+@@ -32,6 +32,7 @@
+ #include <get_connection.h>
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
++#include <config.h>
+ #include <version.h>
+ #include <ipcache.h>
+ 
+@@ -298,10 +299,10 @@
+                                " HTTP/1.1\r\n"
+                                "Host: %s\r\n"
+                                "Authorization: Basic %s\r\n"
+-                               "User-Agent: %s %s - %s\r\n"
++                               "User-Agent: " BOARD_TYPE " " FW_VERSION "\r\n"
+                                "Connection: close\r\n"
+                                "Pragma: no-cache\r\n\r\n",
+-                               DYNDNSHOST, b64user, PNAME, VERSION, HOMEPAGE);
++                               DYNDNSHOST, b64user);
+ 		(void)strncat(message, buffer, BUFLEN - 1 - strlen(message));
+ 	}
+ 	print_debug("\n\nMessage:"
+diff -ruN updatedd-2.6-src/src/plugins/libeurodyndns.c updatedd-2.6/src/plugins/libeurodyndns.c
+--- updatedd-2.6-src/src/plugins/libeurodyndns.c	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/src/plugins/libeurodyndns.c	2011-02-07 22:18:50.000000000 +0300
+@@ -32,6 +32,7 @@
+ #include <get_connection.h>
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
++#include <config.h>
+ #include <version.h>
+ 
+ #include "libeurodyndns.h"
+@@ -286,10 +287,10 @@
+                                " HTTP/1.1\r\n"
+                                "Host: %s\r\n"
+                                "Authorization: Basic %s\r\n"
+-                               "User-Agent: %s %s - %s\r\n"
++                               "User-Agent: " BOARD_TYPE " " FW_VERSION "\r\n"
+                                "Connection: close\r\n"
+                                "Pragma: no-cache\r\n\r\n",
+-                               DYNDNSHOST, b64user, PNAME, VERSION, HOMEPAGE);
++                               DYNDNSHOST, b64user);
+ 		(void)strncat(message, buffer, BUFLEN - 1 - strlen(message));
+ 	}
+ 	print_debug("\n\nMessage:"
+diff -ruN updatedd-2.6-src/src/plugins/libhn.c updatedd-2.6/src/plugins/libhn.c
+--- updatedd-2.6-src/src/plugins/libhn.c	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/src/plugins/libhn.c	2011-02-07 22:18:43.000000000 +0300
+@@ -32,6 +32,7 @@
+ #include <get_connection.h>
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
++#include <config.h>
+ #include <version.h>
+ 
+ #include "libhn.h"
+@@ -210,10 +211,10 @@
+                                " HTTP/1.1\r\n"
+                                "Host: %s\r\n"
+                                "Authorization: Basic %s\r\n"
+-                               "User-Agent: %s %s - %s\r\n"
++                               "User-Agent: " BOARD_TYPE " " FW_VERSION "\r\n"
+                                "Connection: close\r\n"
+                                "Pragma: no-cache\r\n\r\n",
+-                               DYNDNSHOST, b64user, PNAME, VERSION, HOMEPAGE);
++                               DYNDNSHOST, b64user);
+ 		(void)strncat(message, buffer, BUFFREE(message));
+                 free(b64user);
+ 	}
+diff -ruN updatedd-2.6-src/src/plugins/libnoip.c updatedd-2.6/src/plugins/libnoip.c
+--- updatedd-2.6-src/src/plugins/libnoip.c	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/src/plugins/libnoip.c	2011-02-07 22:18:36.000000000 +0300
+@@ -31,6 +31,7 @@
+ #include <get_connection.h>
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
++#include <config.h>
+ #include <version.h>
+ 
+ #include "libnoip.h"
+@@ -231,10 +232,10 @@
+ 		(void)snprintf(buffer, 1024,
+                                " HTTP/1.1\r\n"
+                                "Host: %s\r\n"
+-                               "User-Agent: %s %s - %s\r\n"
++                               "User-Agent: " BOARD_TYPE " " FW_VERSION "\r\n"
+                                "Connection: close\r\n"
+                                "Pragma: no-cache\r\n\r\n",
+-                               DYNDNSHOST, PNAME, VERSION, HOMEPAGE);
++                               DYNDNSHOST);
+ 		(void)strncat(message, buffer, BUFFREE(message));
+ 	}
+ 	print_debug("\n\nMessage:"
+diff -ruN updatedd-2.6-src/src/plugins/libods.c updatedd-2.6/src/plugins/libods.c
+--- updatedd-2.6-src/src/plugins/libods.c	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/src/plugins/libods.c	2011-02-07 22:18:29.000000000 +0300
+@@ -32,6 +32,7 @@
+ #include <get_connection.h>
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
++#include <config.h>
+ #include <version.h>
+ 
+ #include "libods.h"
+diff -ruN updatedd-2.6-src/src/plugins/libovh.c updatedd-2.6/src/plugins/libovh.c
+--- updatedd-2.6-src/src/plugins/libovh.c	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/src/plugins/libovh.c	2011-02-07 22:18:23.000000000 +0300
+@@ -32,6 +32,7 @@
+ #include <get_connection.h>
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
++#include <config.h>
+ #include <version.h>
+ 
+ #include "libovh.h"
+@@ -210,10 +211,10 @@
+                                " HTTP/1.1\r\n"
+                                "Host: %s\r\n"
+                                "Authorization: Basic %s\r\n"
+-                               "User-Agent: %s %s - %s\r\n"
++                               "User-Agent: " BOARD_TYPE " " FW_VERSION "\r\n"
+                                "Connection: close\r\n"
+                                "Pragma: no-cache\r\n\r\n",
+-                               DYNDNSHOST, b64user, PNAME, VERSION, HOMEPAGE);
++                               DYNDNSHOST, b64user);
+ 		(void)strncat(message, buffer, BUFLEN - 1 - strlen(message));
+ 	}
+ 	print_debug("\n\nMessage:"
+diff -ruN updatedd-2.6-src/src/plugins/libregfish.c updatedd-2.6/src/plugins/libregfish.c
+--- updatedd-2.6-src/src/plugins/libregfish.c	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/src/plugins/libregfish.c	2011-02-07 22:18:16.000000000 +0300
+@@ -31,6 +31,7 @@
+ #include <get_connection.h>
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
++#include <config.h>
+ #include <version.h>
+ 
+ #include "libregfish.h"
+@@ -276,11 +277,11 @@
+ 	(void)snprintf(message, BUFLEN,
+                        "GET /dyndns/2/?%s&fqdn=%s&forcehost=%i&ismx=%i HTTP/1.1\r\n"
+                        "Host: %s\r\n"
+-                       "User-Agent: %s %s - %s\r\n"
++                       "User-Agent: " BOARD_TYPE " " FW_VERSION "\r\n"
+                        "Connection: close\r\n"
+                        "Pragma: no-cache\r\n\r\n",
+                        buffer, args->hostname, args->force_host, args->ismx,
+-                       DYNDNSHOST, PNAME, VERSION, HOMEPAGE);
++                       DYNDNSHOST);
+ 
+ 	print_debug("\n\nMessage:"
+ 		    "\n--------------------------------------\n"
+diff -ruN updatedd-2.6-src/src/plugins/libtzo.c updatedd-2.6/src/plugins/libtzo.c
+--- updatedd-2.6-src/src/plugins/libtzo.c	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/src/plugins/libtzo.c	2011-02-07 22:18:02.000000000 +0300
+@@ -32,6 +32,7 @@
+ #include <get_connection.h>
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
++#include <config.h>
+ #include <version.h>
+ 
+ #include "libtzo.h"
+diff -ruN updatedd-2.6-src/src/plugins/libzoneedit.c updatedd-2.6/src/plugins/libzoneedit.c
+--- updatedd-2.6-src/src/plugins/libzoneedit.c	2011-02-05 22:44:18.000000000 +0300
++++ updatedd-2.6/src/plugins/libzoneedit.c	2011-02-07 22:25:18.000000000 +0300
+@@ -33,6 +33,7 @@
+ #include <unistd.h>
+ #include <updatedd-exception.h>
+ #include <ret_codes.h>
++#include <config.h>
+ #include <version.h>
+ 
+ #include "libzoneedit.h"
+@@ -220,10 +221,10 @@
+                                " HTTP/1.1\r\n"
+                                "Host: %s\r\n"
+                                "Authorization: Basic %s\r\n"
+-                               "User-Agent: %s %s - %s\r\n"
++                               "User-Agent: " BOARD_TYPE " " FW_VERSION "\r\n"
+                                "Connection: close\r\n"
+                                "Pragma: no-cache\r\n\r\n",
+-                               DYNDNSHOST, b64user, PNAME, VERSION, HOMEPAGE);
++                               DYNDNSHOST, b64user);
+ 		(void)strncat(message, buffer, BUFLEN - 1 - strlen(message));
+ 	}
+ 	print_debug("\n\nMessage:"
